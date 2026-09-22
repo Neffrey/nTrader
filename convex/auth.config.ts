@@ -1,10 +1,10 @@
 import { AuthConfig } from "convex/server";
-import {env} from "../env"
 
 export default {
   providers: [
     {
-      domain: env.CONVEX_URL,
+      // Convex Auth signs JWTs with issuer CONVEX_SITE_URL (*.convex.site).
+      domain: process.env.CONVEX_SITE_URL!,
       applicationID: "convex",
     },
   ],
