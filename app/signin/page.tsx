@@ -12,7 +12,7 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   return (
-    <div className="flex flex-col gap-8 w-full max-w-lg mx-auto h-screen justify-center items-center px-4">
+    <div className="flex flex-col gap-8 w-full max-w-lg mx-auto flex-1 justify-center items-center px-4">
       <div className="text-center flex flex-col items-center gap-4">
         <div className="flex items-center gap-6">
           <Image

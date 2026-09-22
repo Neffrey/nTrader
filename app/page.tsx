@@ -12,7 +12,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-neutral-950 px-6 text-neutral-100">
+    <main className="flex flex-1 flex-col items-center justify-center bg-neutral-950 px-6 text-neutral-100">
       <div className="flex w-full max-w-md flex-col items-center gap-8 text-center">
         <div>
           <h1 className="text-5xl font-semibold tracking-tight">nTrader</h1>

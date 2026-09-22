@@ -35,7 +35,7 @@ export default async function AccountPage({
   ];
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-neutral-950 px-6 text-neutral-100">
+    <main className="flex flex-1 flex-col items-center justify-center bg-neutral-950 px-6 text-neutral-100">
       <div className="flex w-full max-w-md flex-col items-center gap-8 text-center">
         <div className="flex flex-col items-center gap-4">
           {user.image && (
