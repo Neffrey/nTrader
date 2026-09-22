@@ -16,6 +16,12 @@ export default defineSchema({
     phone: v.optional(v.string()),
     phoneVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
+    poeAccessToken: v.optional(v.string()),
+    poeRefreshToken: v.optional(v.string()),
+    poeTokenExpiresAt: v.optional(v.number()),
+    poeScope: v.optional(v.string()),
+    poeUsername: v.optional(v.string()),
+    poeSub: v.optional(v.string()),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),

@@ -8,6 +8,8 @@ const currentUser = v.object({
   email: v.union(v.string(), v.null()),
   image: v.union(v.string(), v.null()),
   phone: v.union(v.string(), v.null()),
+  poeAuthorized: v.boolean(),
+  poeUsername: v.union(v.string(), v.null()),
 });
 
 export const current = query({
@@ -28,6 +30,8 @@ export const current = query({
       email: user.email ?? null,
       image: user.image ?? null,
       phone: user.phone ?? null,
+      poeAuthorized: user.poeAccessToken !== undefined,
+      poeUsername: user.poeUsername ?? null,
     };
   },
 });
@@ -49,5 +53,34 @@ export const updateDisplayName = mutation({
     }
     await ctx.db.patch("users", userId, { displayName });
     return displayName;
+  },
+});
+
+export const savePoeCredentials = mutation({
+  args: {
+    accessToken: v.string(),
+    refreshToken: v.union(v.string(), v.null()),
+    expiresAt: v.union(v.number(), v.null()),
+    scope: v.string(),
+    poeUsername: v.string(),
+    poeSub: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new ConvexError("Not authenticated");
+    }
+    await ctx.db.patch("users", userId, {
+      poeAccessToken: args.accessToken,
+      poeScope: args.scope,
+      poeUsername: args.poeUsername,
+      poeSub: args.poeSub,
+      ...(args.refreshToken === null
+        ? {}
+        : { poeRefreshToken: args.refreshToken }),
+      ...(args.expiresAt === null ? {} : { poeTokenExpiresAt: args.expiresAt }),
+    });
+    return null;
   },
 });

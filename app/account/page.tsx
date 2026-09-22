@@ -6,7 +6,11 @@ import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { DisplayNameEditor } from "./display-name-editor";
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ poe?: string; message?: string }>;
+}) {
   const token = await convexAuthNextjsToken();
   if (!token) {
     redirect("/");
@@ -17,10 +21,17 @@ export default async function AccountPage() {
     redirect("/");
   }
 
+  const params = await searchParams;
+  const poeError = params.poe === "error" ? params.message : null;
+
   const fields = [
     { label: "Name", value: user.name },
     { label: "Email", value: user.email },
     { label: "Phone", value: user.phone },
+    {
+      label: "Path of Exile",
+      value: user.poeAuthorized ? (user.poeUsername ?? "Authorized") : "Not authorized",
+    },
   ];
 
   return (
@@ -54,6 +65,18 @@ export default async function AccountPage() {
             </div>
           ))}
         </dl>
+
+        <a
+          href="/api/poe/authorize"
+          className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
+        >
+          {user.poeAuthorized ? "Reauthorize Path of Exile" : "Authorize Path of Exile"}
+        </a>
+        {poeError && (
+          <p className="text-sm text-red-400" role="alert">
+            {poeError}
+          </p>
+        )}
 
         <Link
           href="/"
