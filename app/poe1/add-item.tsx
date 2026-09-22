@@ -54,6 +54,11 @@ export function AddItem() {
             Synced {fetchedCount} currency and fragment items
           </p>
         )}
+        {error && (
+          <p className="text-sm text-red-400" role="alert">
+            {error}
+          </p>
+        )}
       </div>
       <form
         className="flex flex-col gap-3"
@@ -108,11 +113,6 @@ export function AddItem() {
             setImage(event.target.value);
           }}
         />
-        {error && (
-          <p className="text-sm text-red-400" role="alert">
-            {error}
-          </p>
-        )}
         <button
           type="submit"
           disabled={saving}
@@ -123,7 +123,9 @@ export function AddItem() {
       </form>
 
       {items && items.length > 0 && (
-        <ul className="flex flex-col divide-y divide-neutral-800">
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-neutral-400">{items.length} items</p>
+          <ul className="flex max-h-[32rem] flex-col divide-y divide-neutral-800 overflow-y-auto">
           {items.map((item) => (
             <li key={item._id} className="flex items-center gap-3 py-3">
               {item.image && (
@@ -146,7 +148,8 @@ export function AddItem() {
               </span>
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       )}
     </div>
   );

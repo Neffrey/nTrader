@@ -34,7 +34,7 @@ export const list = query({
     const items = await ctx.db
       .query("items1")
       .withIndex("by_name")
-      .take(100);
+      .take(2000);
     return items.map((row) => ({
       _id: row._id,
       name: row.name,
