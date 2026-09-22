@@ -5,18 +5,22 @@ import { ConvexError } from "convex/values";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 
-export function NameEditor({ name }: { name: string | null }) {
-  const updateName = useMutation(api.users.updateName);
+export function DisplayNameEditor({
+  displayName,
+}: {
+  displayName: string | null;
+}) {
+  const updateDisplayName = useMutation(api.users.updateDisplayName);
   const [editing, setEditing] = useState(false);
-  const [current, setCurrent] = useState(name);
-  const [value, setValue] = useState(name ?? "");
+  const [current, setCurrent] = useState(displayName);
+  const [value, setValue] = useState(displayName ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   if (!editing) {
     return (
       <div className="flex items-baseline justify-between gap-6 py-3">
-        <dt className="text-sm text-neutral-500">Name</dt>
+        <dt className="text-sm text-neutral-500">Display name</dt>
         <dd className="flex items-center gap-3 text-sm text-neutral-100">
           <span>{current ?? "—"}</span>
           <button
@@ -42,7 +46,7 @@ export function NameEditor({ name }: { name: string | null }) {
         event.preventDefault();
         setSaving(true);
         setError(null);
-        void updateName({ name: value })
+        void updateDisplayName({ displayName: value })
           .then((saved) => {
             setCurrent(saved);
             setEditing(false);
@@ -53,7 +57,7 @@ export function NameEditor({ name }: { name: string | null }) {
             } else if (err instanceof Error) {
               setError(err.message);
             } else {
-              setError("Could not save name");
+              setError("Could not save display name");
             }
           })
           .finally(() => {
@@ -61,11 +65,11 @@ export function NameEditor({ name }: { name: string | null }) {
           });
       }}
     >
-      <label className="text-sm text-neutral-500" htmlFor="account-name">
-        Name
+      <label className="text-sm text-neutral-500" htmlFor="display-name">
+        Display name
       </label>
       <input
-        id="account-name"
+        id="display-name"
         value={value}
         maxLength={80}
         autoFocus

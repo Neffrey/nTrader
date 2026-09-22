@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import { NameEditor } from "./name-editor";
+import { DisplayNameEditor } from "./display-name-editor";
 
 export default async function AccountPage() {
   const token = await convexAuthNextjsToken();
@@ -18,6 +18,7 @@ export default async function AccountPage() {
   }
 
   const fields = [
+    { label: "Name", value: user.name },
     { label: "Email", value: user.email },
     { label: "Phone", value: user.phone },
   ];
@@ -29,7 +30,7 @@ export default async function AccountPage() {
           {user.image && (
             <Image
               src={user.image}
-              alt={user.name ?? "Profile photo"}
+              alt={user.displayName ?? "Profile photo"}
               width={72}
               height={72}
               unoptimized
@@ -40,7 +41,7 @@ export default async function AccountPage() {
         </div>
 
         <dl className="w-full divide-y divide-neutral-800 text-left">
-          <NameEditor name={user.name} />
+          <DisplayNameEditor displayName={user.displayName} />
           {fields.map((field) => (
             <div
               key={field.label}
