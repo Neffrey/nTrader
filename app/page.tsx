@@ -22,22 +22,38 @@ export default function Home() {
         </div>
 
         {isLoading ? null : isAuthenticated ? (
-          <div className="flex items-center gap-3">
-            <Link
-              href="/account"
-              className="rounded-md border border-neutral-700 px-5 py-2.5 text-sm text-neutral-200 hover:bg-neutral-900"
-            >
-              Account
-            </Link>
-            <button
-              type="button"
-              className="rounded-md border border-neutral-700 px-5 py-2.5 text-sm text-neutral-200 hover:bg-neutral-900"
-              onClick={() => {
-                void signOut();
-              }}
-            >
-              Sign out
-            </button>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/poe1"
+                className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
+              >
+                PoE 1
+              </Link>
+              <Link
+                href="/poe2"
+                className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
+              >
+                PoE 2
+              </Link>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/account"
+                className="rounded-md border border-neutral-700 px-5 py-2.5 text-sm text-neutral-200 hover:bg-neutral-900"
+              >
+                Account
+              </Link>
+              <button
+                type="button"
+                className="rounded-md border border-neutral-700 px-5 py-2.5 text-sm text-neutral-200 hover:bg-neutral-900"
+                onClick={() => {
+                  void signOut();
+                }}
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">

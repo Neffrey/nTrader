@@ -19,4 +19,36 @@ export default defineSchema({
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
+    items1: defineTable({
+      name: v.string(),
+      image: v.string(),
+    }),
+    items2: defineTable({
+      name: v.string(),
+      image: v.string(),
+    }),
+    itemPairs1: defineTable({
+      itemAId: v.id("items1"),
+      itemBId: v.id("items1"),
+    }),
+    priceTick1: defineTable({
+      userId: v.id("users"),
+      itemPairId: v.id("itemPairs1"),
+      price: v.number(),
+      postTime: v.number(),
+    })
+      .index("by_itemPairId", ["itemPairId"])
+      .index("by_time", ["postTime"]),
+    itemPairs2: defineTable({
+      itemAId: v.id("items2"),
+      itemBId: v.id("items2"),
+    }),
+    priceTick2: defineTable({
+      userId: v.id("users"),
+      itemPairId: v.id("itemPairs2"),
+      price: v.number(),
+      postTime: v.number(),
+    })
+      .index("by_itemPairId", ["itemPairId"])
+      .index("by_time", ["postTime"]),
 });
