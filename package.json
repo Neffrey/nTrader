@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "convex dev --start 'next dev'",
+    "dev": "concurrently --kill-others --names convex,next --prefix-colors cyan,magenta \"convex dev\" \"next dev\"",
     "predev": "convex init && node setup.mjs --once",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && next build",
@@ -11,11 +11,14 @@
     "lint": "eslint . --ignore-pattern \"convex/_generated/**\""
   },
   "dependencies": {
+    "@auth/core": "0.41.1",
     "@convex-dev/auth": "^0.0.95",
+    "@t3-oss/env-nextjs": "^0.13.11",
     "convex": "^1.44.0",
     "next": "16.3.3",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^5.0.0",
@@ -24,17 +27,12 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@typescript/native": "npm:typescript@^7.0.2",
+    "concurrently": "^10.0.5",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.0",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "@tailwindcss/oxide"
-    ]
   }
 }
