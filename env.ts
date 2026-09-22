@@ -7,7 +7,9 @@ export const env = createEnv({
     CONVEX_DEPLOYMENT: z.string(),
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
-
+    POE_CLIENT_ID: z.string().min(1).optional(),
+    POE_CLIENT_SECRET: z.string().min(1).optional(),
+    POE_REDIRECT_URI: z.url().optional(),
   },
   client: {
     NEXT_PUBLIC_CONVEX_URL: z.url(),
@@ -21,6 +23,9 @@ export const env = createEnv({
     NEXT_PUBLIC_CONVEX_SITE_URL: process.env.NEXT_PUBLIC_CONVEX_SITE_URL,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    POE_CLIENT_ID: process.env.POE_CLIENT_ID,
+    POE_CLIENT_SECRET: process.env.POE_CLIENT_SECRET,
+    POE_REDIRECT_URI: process.env.POE_REDIRECT_URI,
   },
   // For Next.js >= 13.4.4, you only need to destructure client variables:
   // experimental__runtimeEnv: {
