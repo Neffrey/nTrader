@@ -29,14 +29,14 @@ export default defineSchema({
     items1: defineTable({
       name: v.string(),
       image: v.optional(v.string()),
-      internalId: v.optional(v.string()),
+      internalId: v.string(),
     })
       .index("by_name", ["name"])
       .index("by_internalId", ["internalId"]),
     items2: defineTable({
       name: v.string(),
       image: v.string(),
-      internalId: v.optional(v.string()),
+      internalId: v.string(),
     })
       .index("by_name", ["name"])
       .index("by_internalId", ["internalId"]),

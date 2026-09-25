@@ -51,14 +51,7 @@ export function AddItem() {
                   className="h-10 w-10 rounded-md object-cover"
                 />
               )}
-              <span className="flex min-w-0 flex-col">
-                <span className="text-sm text-neutral-100">{item.name}</span>
-                {item.internalId && (
-                  <span className="text-xs text-neutral-500">
-                    {item.internalId}
-                  </span>
-                )}
-              </span>
+              <span className="min-w-0 text-sm text-neutral-100">{item.name}</span>
               <ItemMenu
                 showEdit={showEdit}
                 showDelete={showDelete}
@@ -67,7 +60,7 @@ export function AddItem() {
                   setEditingId(item._id);
                   setName(item.name);
                   setImage(item.image ?? "");
-                  setInternalId(item.internalId ?? "");
+                  setInternalId(item.internalId);
                   setError(null);
                 }}
                 onDelete={() => {
@@ -140,6 +133,7 @@ export function AddItem() {
                 <input
                   value={internalId}
                   placeholder="Internal id"
+                  required
                   className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
                   onChange={(event) => {
                     setInternalId(event.target.value);

@@ -2,10 +2,20 @@
 
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
 
 type Game = "poe1" | "poe2";
+
+const gameStorageKey = "ntrader-add-item-game";
+
+function readStoredGame(): Game {
+  if (typeof window === "undefined") {
+    return "poe1";
+  }
+  const stored = window.localStorage.getItem(gameStorageKey);
+  return stored === "poe2" ? "poe2" : "poe1";
+}
 
 function internalIdFromName(name: string) {
   return name.trim().toLowerCase().replace(/\s+/g, "-");
@@ -22,6 +32,16 @@ export function AddItemForm() {
   const [error, setError] = useState<string | null>(null);
   const [savedGame, setSavedGame] = useState<Game | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setGame(readStoredGame());
+  }, []);
+
+  function selectGame(next: Game) {
+    setGame(next);
+    window.localStorage.setItem(gameStorageKey, next);
+    setSavedGame(null);
+  }
 
   return (
     <form
@@ -66,8 +86,7 @@ export function AddItemForm() {
             value="poe1"
             checked={game === "poe1"}
             onChange={() => {
-              setGame("poe1");
-              setSavedGame(null);
+              selectGame("poe1");
             }}
           />
           PoE 1
@@ -79,8 +98,7 @@ export function AddItemForm() {
             value="poe2"
             checked={game === "poe2"}
             onChange={() => {
-              setGame("poe2");
-              setSavedGame(null);
+              selectGame("poe2");
             }}
           />
           PoE 2
@@ -113,6 +131,7 @@ export function AddItemForm() {
       <input
         value={internalId}
         placeholder="Internal id"
+        required
         className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
         onChange={(event) => {
           const nextId = event.target.value;
