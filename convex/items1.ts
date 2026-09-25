@@ -71,6 +71,42 @@ export const add = mutation({
   },
 });
 
+export const update = mutation({
+  args: {
+    id: v.id("items1"),
+    name: v.string(),
+    image: v.string(),
+    internalId: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const existing = await ctx.db.get("items1", args.id);
+    if (existing === null) {
+      throw new ConvexError("Item not found");
+    }
+    const name = args.name.trim();
+    const image = args.image.trim();
+    const internalId = args.internalId?.trim() ?? "";
+    if (name.length === 0) {
+      throw new ConvexError("Name cannot be empty");
+    }
+    if (
+      image.length > 0 &&
+      !image.startsWith("https://") &&
+      !image.startsWith("http://")
+    ) {
+      throw new ConvexError("Image must be an http or https URL");
+    }
+    await ctx.db.replace("items1", args.id, {
+      name,
+      ...(image.length === 0 ? {} : { image }),
+      ...(internalId.length === 0 ? {} : { internalId }),
+    });
+    return null;
+  },
+});
+
 export const upsertBatch = internalMutation({
   args: { items: v.array(catalogItem) },
   returns: v.number(),
