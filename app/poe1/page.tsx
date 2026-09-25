@@ -11,7 +11,7 @@ export default async function Poe1Page() {
 
   return (
     <main className="flex flex-1 flex-col items-center bg-neutral-950 px-6 py-16 text-neutral-100">
-      <div className="flex w-full max-w-md flex-col items-center gap-8 text-center">
+      <div className="flex w-full max-w-2xl flex-col items-center gap-8 text-center">
         <h1 className="text-4xl font-semibold tracking-tight">PoE 1</h1>
         <AddItem />
         <Link
