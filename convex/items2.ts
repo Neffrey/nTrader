@@ -6,6 +6,7 @@ const item = v.object({
   _id: v.id("items2"),
   name: v.string(),
   image: v.string(),
+  internalId: v.union(v.string(), v.null()),
 });
 
 export const list = query({
@@ -21,6 +22,7 @@ export const list = query({
       _id: row._id,
       name: row.name,
       image: row.image,
+      internalId: row.internalId ?? null,
     }));
   },
 });
@@ -29,6 +31,7 @@ export const add = mutation({
   args: {
     name: v.string(),
     image: v.string(),
+    internalId: v.optional(v.string()),
   },
   returns: v.id("items2"),
   handler: async (ctx, args) => {
@@ -38,12 +41,17 @@ export const add = mutation({
     }
     const name = args.name.trim();
     const image = args.image.trim();
+    const internalId = args.internalId?.trim() ?? "";
     if (name.length === 0) {
       throw new ConvexError("Name cannot be empty");
     }
     if (!image.startsWith("https://") && !image.startsWith("http://")) {
       throw new ConvexError("Image must be an http or https URL");
     }
-    return await ctx.db.insert("items2", { name, image });
+    return await ctx.db.insert("items2", {
+      name,
+      image,
+      ...(internalId.length === 0 ? {} : { internalId }),
+    });
   },
 });

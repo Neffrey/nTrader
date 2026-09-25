@@ -25,7 +25,14 @@ export function AddItem() {
               unoptimized
               className="h-10 w-10 rounded-md object-cover"
             />
-            <span className="text-sm text-neutral-100">{item.name}</span>
+            <span className="flex flex-col">
+              <span className="text-sm text-neutral-100">{item.name}</span>
+              {item.internalId && (
+                <span className="text-xs text-neutral-500">
+                  {item.internalId}
+                </span>
+              )}
+            </span>
           </li>
         ))}
       </ul>

@@ -35,7 +35,10 @@ export default defineSchema({
     items2: defineTable({
       name: v.string(),
       image: v.string(),
-    }).index("by_name", ["name"]),
+      internalId: v.optional(v.string()),
+    })
+      .index("by_name", ["name"])
+      .index("by_internalId", ["internalId"]),
     itemPairs1: defineTable({
       itemAId: v.id("items1"),
       itemBId: v.id("items1"),

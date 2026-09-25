@@ -29,7 +29,7 @@ export function AddItemForm() {
         const save =
           game === "poe1"
             ? addItem1({ name, image, internalId })
-            : addItem2({ name, image });
+            : addItem2({ name, image, internalId });
         void save
           .then(() => {
             setName("");
@@ -100,17 +100,15 @@ export function AddItemForm() {
           setSavedGame(null);
         }}
       />
-      {game === "poe1" && (
-        <input
-          value={internalId}
-          placeholder="Internal id"
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-          onChange={(event) => {
-            setInternalId(event.target.value);
-            setSavedGame(null);
-          }}
-        />
-      )}
+      <input
+        value={internalId}
+        placeholder="Internal id"
+        className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+        onChange={(event) => {
+          setInternalId(event.target.value);
+          setSavedGame(null);
+        }}
+      />
       <button
         type="submit"
         disabled={saving}
