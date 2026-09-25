@@ -107,6 +107,20 @@ export const update = mutation({
   },
 });
 
+export const remove = mutation({
+  args: { id: v.id("items1") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const existing = await ctx.db.get("items1", args.id);
+    if (existing === null) {
+      throw new ConvexError("Item not found");
+    }
+    await ctx.db.delete("items1", args.id);
+    return null;
+  },
+});
+
 export const upsertBatch = internalMutation({
   args: { items: v.array(catalogItem) },
   returns: v.number(),

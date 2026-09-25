@@ -4,12 +4,16 @@ import { useEffect, useId, useRef, useState } from "react";
 
 export function ItemMenu({
   showEdit,
+  showDelete,
   showComingSoon,
   onEdit,
+  onDelete,
 }: {
   showEdit: boolean;
+  showDelete: boolean;
   showComingSoon: boolean;
   onEdit: () => void;
+  onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -38,7 +42,7 @@ export function ItemMenu({
     };
   }, [open]);
 
-  if (!showEdit && !showComingSoon) {
+  if (!showEdit && !showDelete && !showComingSoon) {
     return null;
   }
 
@@ -87,6 +91,19 @@ export function ItemMenu({
               className="cursor-not-allowed rounded px-3 py-2 text-left text-sm text-neutral-500"
             >
               Coming soon
+            </button>
+          )}
+          {showDelete && (
+            <button
+              type="button"
+              role="menuitem"
+              className="rounded px-3 py-2 text-left text-sm text-red-400 hover:bg-neutral-800"
+              onClick={() => {
+                setOpen(false);
+                onDelete();
+              }}
+            >
+              Delete
             </button>
           )}
         </div>

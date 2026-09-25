@@ -85,3 +85,17 @@ export const update = mutation({
     return null;
   },
 });
+
+export const remove = mutation({
+  args: { id: v.id("items2") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const existing = await ctx.db.get("items2", args.id);
+    if (existing === null) {
+      throw new ConvexError("Item not found");
+    }
+    await ctx.db.delete("items2", args.id);
+    return null;
+  },
+});

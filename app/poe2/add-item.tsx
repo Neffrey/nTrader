@@ -12,6 +12,7 @@ export function AddItem() {
   const items = useQuery(api.items2.list);
   const currentUser = useQuery(api.users.current);
   const updateItem = useMutation(api.items2.update);
+  const removeItem = useMutation(api.items2.remove);
   const [editingId, setEditingId] = useState<Id<"items2"> | null>(null);
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
@@ -25,11 +26,17 @@ export function AddItem() {
 
   const role = currentUser?.role;
   const showEdit = role === "admin";
+  const showDelete = role === "admin";
   const showComingSoon = role === "user" || role === "admin";
 
   return (
     <div className="flex w-full flex-col gap-2 text-left">
       <p className="text-sm text-neutral-400">{items.length} items</p>
+      {error && editingId === null && (
+        <p className="text-sm text-red-400" role="alert">
+          {error}
+        </p>
+      )}
       <ul className="flex max-h-[32rem] flex-col divide-y divide-neutral-800 overflow-y-auto">
         {items.map((item) => (
           <li key={item._id} className="flex flex-col gap-3 py-3">
@@ -52,6 +59,7 @@ export function AddItem() {
               </span>
               <ItemMenu
                 showEdit={showEdit}
+                showDelete={showDelete}
                 showComingSoon={showComingSoon}
                 onEdit={() => {
                   setEditingId(item._id);
@@ -59,6 +67,24 @@ export function AddItem() {
                   setImage(item.image);
                   setInternalId(item.internalId ?? "");
                   setError(null);
+                }}
+                onDelete={() => {
+                  setError(null);
+                  void removeItem({ id: item._id })
+                    .then(() => {
+                      if (editingId === item._id) {
+                        setEditingId(null);
+                      }
+                    })
+                    .catch((err: unknown) => {
+                      if (err instanceof ConvexError) {
+                        setError(String(err.data));
+                      } else if (err instanceof Error) {
+                        setError(err.message);
+                      } else {
+                        setError("Could not delete item");
+                      }
+                    });
                 }}
               />
             </div>
