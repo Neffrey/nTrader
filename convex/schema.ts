@@ -35,7 +35,7 @@ export default defineSchema({
     items2: defineTable({
       name: v.string(),
       image: v.string(),
-    }),
+    }).index("by_name", ["name"]),
     itemPairs1: defineTable({
       itemAId: v.id("items1"),
       itemBId: v.id("items1"),
