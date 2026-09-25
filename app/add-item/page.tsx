@@ -1,11 +1,17 @@
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
+import { fetchQuery } from "convex/nextjs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { api } from "@/convex/_generated/api";
 import { AddItemForm } from "./add-item-form";
 
 export default async function AddItemPage() {
   const token = await convexAuthNextjsToken();
   if (!token) {
+    redirect("/");
+  }
+  const user = await fetchQuery(api.users.current, {}, { token });
+  if (user === null || user.role !== "admin") {
     redirect("/");
   }
 

@@ -1,21 +1,23 @@
 "use client";
 
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { api } from "@/convex/_generated/api";
 
 const memberLinks = [
-  { href: "/poe1", label: "PoE 1" },
-  { href: "/poe2", label: "PoE 2" },
-  { href: "/add-item", label: "Add item" },
-  { href: "/account", label: "Account" },
+  { href: "/poe1", label: "PoE 1", admin: false },
+  { href: "/poe2", label: "PoE 2", admin: false },
+  { href: "/add-item", label: "Add item", admin: true },
+  { href: "/account", label: "Account", admin: false },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useConvexAuth();
+  const currentUser = useQuery(api.users.current);
   const { signIn } = useAuthActions();
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,9 @@ export function Header() {
           </li>
           {!isLoading &&
             isAuthenticated &&
-            memberLinks.map((link) => {
+            memberLinks
+              .filter((link) => !link.admin || currentUser?.role === "admin")
+              .map((link) => {
               const active = pathname === link.href;
               return (
                 <li key={link.href}>

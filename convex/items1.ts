@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { action, internalMutation, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { requireAdmin } from "./users";
 
 const item = v.object({
   _id: v.id("items1"),
@@ -52,10 +53,7 @@ export const add = mutation({
   },
   returns: v.id("items1"),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new ConvexError("Not authenticated");
-    }
+    await requireAdmin(ctx);
     const name = args.name.trim();
     const image = args.image.trim();
     const internalId = args.internalId?.trim() ?? "";

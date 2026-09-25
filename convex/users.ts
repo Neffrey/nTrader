@@ -1,6 +1,19 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
+
+export async function requireAdmin(ctx: QueryCtx | MutationCtx) {
+  const userId = await getAuthUserId(ctx);
+  if (userId === null) {
+    throw new ConvexError("Not authenticated");
+  }
+  const user = await ctx.db.get("users", userId);
+  if (user === null || user.role !== "admin") {
+    throw new ConvexError("Not authorized");
+  }
+  return userId;
+}
 
 const currentUser = v.object({
   name: v.union(v.string(), v.null()),
@@ -10,6 +23,7 @@ const currentUser = v.object({
   phone: v.union(v.string(), v.null()),
   poeAuthorized: v.boolean(),
   poeUsername: v.union(v.string(), v.null()),
+  role: v.union(v.literal("user"), v.literal("admin"), v.literal("banned")),
 });
 
 export const current = query({
@@ -32,6 +46,7 @@ export const current = query({
       phone: user.phone ?? null,
       poeAuthorized: user.poeAccessToken !== undefined,
       poeUsername: user.poeUsername ?? null,
+      role: user.role,
     };
   },
 });

@@ -22,6 +22,7 @@ export default defineSchema({
     poeScope: v.optional(v.string()),
     poeUsername: v.optional(v.string()),
     poeSub: v.optional(v.string()),
+    role: v.union(v.literal("user"), v.literal("admin"), v.literal("banned")),
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
