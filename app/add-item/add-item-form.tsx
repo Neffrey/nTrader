@@ -7,6 +7,10 @@ import { api } from "@/convex/_generated/api";
 
 type Game = "poe1" | "poe2";
 
+function internalIdFromName(name: string) {
+  return name.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
 export function AddItemForm() {
   const addItem1 = useMutation(api.items1.add);
   const addItem2 = useMutation(api.items2.add);
@@ -14,6 +18,7 @@ export function AddItemForm() {
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
   const [internalId, setInternalId] = useState("");
+  const [internalIdTouched, setInternalIdTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedGame, setSavedGame] = useState<Game | null>(null);
   const [saving, setSaving] = useState(false);
@@ -35,6 +40,7 @@ export function AddItemForm() {
             setName("");
             setImage("");
             setInternalId("");
+            setInternalIdTouched(false);
             setSavedGame(game);
           })
           .catch((err: unknown) => {
@@ -86,7 +92,11 @@ export function AddItemForm() {
         required
         className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
         onChange={(event) => {
-          setName(event.target.value);
+          const nextName = event.target.value;
+          setName(nextName);
+          if (!internalIdTouched) {
+            setInternalId(internalIdFromName(nextName));
+          }
           setSavedGame(null);
         }}
       />
@@ -105,7 +115,9 @@ export function AddItemForm() {
         placeholder="Internal id"
         className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
         onChange={(event) => {
-          setInternalId(event.target.value);
+          const nextId = event.target.value;
+          setInternalId(nextId);
+          setInternalIdTouched(nextId !== internalIdFromName(name));
           setSavedGame(null);
         }}
       />
