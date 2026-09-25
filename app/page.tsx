@@ -23,7 +23,7 @@ export default function Home() {
 
         {isLoading ? null : isAuthenticated ? (
           <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <Link
                 href="/poe1"
                 className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
@@ -35,6 +35,12 @@ export default function Home() {
                 className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
               >
                 PoE 2
+              </Link>
+              <Link
+                href="/add-item"
+                className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
+              >
+                Add item
               </Link>
             </div>
             <div className="flex items-center gap-3">
