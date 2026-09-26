@@ -3,6 +3,7 @@ import {
   createRouteMatcher,
   nextjsMiddlewareRedirect,
 } from "@convex-dev/auth/nextjs/server";
+import { isLocalHostname } from "./lib/local-host";
 
 const isSignInPage = createRouteMatcher(["/signin"]);
 const isMemberPage = createRouteMatcher([
@@ -17,7 +18,11 @@ export default convexAuthNextjsMiddleware(async (request, { convexAuth }) => {
   if (isSignInPage(request) && authenticated) {
     return nextjsMiddlewareRedirect(request, "/");
   }
-  if (isMemberPage(request) && !authenticated) {
+  if (
+    isMemberPage(request) &&
+    !authenticated &&
+    !isLocalHostname(request.headers.get("host"))
+  ) {
     return nextjsMiddlewareRedirect(request, "/");
   }
 });

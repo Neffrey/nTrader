@@ -1,11 +1,12 @@
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { isLocalHostRequest } from "@/lib/local-request";
 import { AddItem } from "./add-item";
 
 export default async function Poe2Page() {
   const token = await convexAuthNextjsToken();
-  if (!token) {
+  if (!token && !(await isLocalHostRequest())) {
     redirect("/");
   }
 

@@ -3,16 +3,20 @@ import { fetchQuery } from "convex/nextjs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import { isLocalHostRequest } from "@/lib/local-request";
 import { AddItemForm } from "./add-item-form";
 
 export default async function AddItemPage() {
+  const localHost = await isLocalHostRequest();
   const token = await convexAuthNextjsToken();
-  if (!token) {
+  if (!token && !localHost) {
     redirect("/");
   }
-  const user = await fetchQuery(api.users.current, {}, { token });
-  if (user === null || user.role !== "admin") {
-    redirect("/");
+  if (!localHost) {
+    const user = await fetchQuery(api.users.current, {}, { token });
+    if (user === null || user.role !== "admin") {
+      redirect("/");
+    }
   }
 
   return (

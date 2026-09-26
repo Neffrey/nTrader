@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import { isLocalHostRequest } from "@/lib/local-request";
 import { DisplayNameEditor } from "./display-name-editor";
 
 export default async function AccountPage({
@@ -11,13 +12,16 @@ export default async function AccountPage({
 }: {
   searchParams: Promise<{ poe?: string; message?: string }>;
 }) {
+  const localHost = await isLocalHostRequest();
   const token = await convexAuthNextjsToken();
-  if (!token) {
+  if (!token && !localHost) {
     redirect("/");
   }
 
-  const user = await fetchQuery(api.users.current, {}, { token });
-  if (user === null) {
+  const user = token
+    ? await fetchQuery(api.users.current, {}, { token })
+    : null;
+  if (user === null && !localHost) {
     redirect("/");
   }
 
@@ -25,12 +29,14 @@ export default async function AccountPage({
   const poeError = params.poe === "error" ? params.message : null;
 
   const fields = [
-    { label: "Name", value: user.name },
-    { label: "Email", value: user.email },
-    { label: "Phone", value: user.phone },
+    { label: "Name", value: user?.name },
+    { label: "Email", value: user?.email },
+    { label: "Phone", value: user?.phone },
     {
       label: "Path of Exile",
-      value: user.poeAuthorized ? (user.poeUsername ?? "Authorized") : "Not authorized",
+      value: user?.poeAuthorized
+        ? (user.poeUsername ?? "Authorized")
+        : "Not authorized",
     },
   ];
 
@@ -38,7 +44,7 @@ export default async function AccountPage({
     <main className="flex flex-1 flex-col items-center justify-center bg-neutral-950 px-6 text-neutral-100">
       <div className="flex w-full max-w-md flex-col items-center gap-8 text-center">
         <div className="flex flex-col items-center gap-4">
-          {user.image && (
+          {user?.image && (
             <Image
               src={user.image}
               alt={user.displayName ?? "Profile photo"}
@@ -52,7 +58,7 @@ export default async function AccountPage({
         </div>
 
         <dl className="w-full divide-y divide-neutral-800 text-left">
-          <DisplayNameEditor displayName={user.displayName} />
+        <DisplayNameEditor displayName={user?.displayName ?? null} />
           {fields.map((field) => (
             <div
               key={field.label}
@@ -70,7 +76,7 @@ export default async function AccountPage({
           href="/api/poe/authorize"
           className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200"
         >
-          {user.poeAuthorized ? "Reauthorize Path of Exile" : "Authorize Path of Exile"}
+          {user?.poeAuthorized ? "Reauthorize Path of Exile" : "Authorize Path of Exile"}
         </a>
         {poeError && (
           <p className="text-sm text-red-400" role="alert">

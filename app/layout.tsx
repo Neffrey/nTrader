@@ -5,6 +5,7 @@ import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
+import { isLocalHostRequest } from "@/lib/local-request";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -23,11 +24,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const localHost = await isLocalHostRequest();
+
   return (
     <ConvexAuthNextjsServerProvider>
       <html lang="en">
@@ -36,7 +39,7 @@ export default function RootLayout({
         >
           <ConvexClientProvider>
             <div className="flex min-h-screen flex-col">
-              <Header />
+              <Header localHost={localHost} />
               <div className="flex flex-1 flex-col">{children}</div>
               <Footer />
             </div>

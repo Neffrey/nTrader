@@ -38,7 +38,6 @@ export function AddItem() {
 
   return (
     <div className="flex w-full flex-col gap-2 text-left">
-      <p className="text-sm text-neutral-400">{items.length} items</p>
       {error && editingId === null && (
         <p className="text-sm text-red-400" role="alert">
           {error}

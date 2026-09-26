@@ -14,7 +14,7 @@ const memberLinks = [
   { href: "/account", label: "Account", admin: false },
 ];
 
-export function Header() {
+export function Header({ localHost }: { localHost: boolean }) {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useConvexAuth();
   const currentUser = useQuery(api.users.current);
@@ -45,10 +45,12 @@ export function Header() {
               Home
             </Link>
           </li>
-          {!isLoading &&
-            isAuthenticated &&
+          {(localHost || (!isLoading && isAuthenticated)) &&
             memberLinks
-              .filter((link) => !link.admin || currentUser?.role === "admin")
+              .filter(
+                (link) =>
+                  localHost || !link.admin || currentUser?.role === "admin",
+              )
               .map((link) => {
               const active = pathname === link.href;
               return (
