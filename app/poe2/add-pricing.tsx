@@ -31,10 +31,18 @@ export function AddPricing() {
           return;
         }
         const parsed = Number(price);
-        const parsedReverse = Number(reversePrice);
-        if (!Number.isFinite(parsed) || !Number.isFinite(parsedReverse)) {
+        if (!Number.isFinite(parsed)) {
           setError("Price must be a number");
           return;
+        }
+        const trimmedReverse = reversePrice.trim();
+        let parsedReverse: number | undefined;
+        if (trimmedReverse.length > 0) {
+          parsedReverse = Number(trimmedReverse);
+          if (!Number.isFinite(parsedReverse)) {
+            setError("Reverse price must be a number");
+            return;
+          }
         }
         setSaving(true);
         setError(null);
@@ -43,7 +51,9 @@ export function AddPricing() {
           itemAId,
           itemBId,
           price: parsed,
-          reversePrice: parsedReverse,
+          ...(parsedReverse === undefined
+            ? {}
+            : { reversePrice: parsedReverse }),
         })
           .then(() => {
             setPrice("");
@@ -105,7 +115,6 @@ export function AddPricing() {
           type="number"
           inputMode="decimal"
           step="any"
-          required
           value={reversePrice}
           placeholder="Reverse price"
           className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"

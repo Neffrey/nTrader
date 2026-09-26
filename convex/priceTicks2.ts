@@ -8,11 +8,11 @@ export const add = mutation({
     itemAId: v.id("items2"),
     itemBId: v.id("items2"),
     price: v.number(),
-    reversePrice: v.number(),
+    reversePrice: v.optional(v.number()),
   },
   returns: v.object({
     priceTickId: v.id("priceTick2"),
-    reversePriceTickId: v.id("priceTick2"),
+    reversePriceTickId: v.union(v.id("priceTick2"), v.null()),
   }),
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -23,8 +23,14 @@ export const add = mutation({
     if (user === null || user.role === "banned") {
       throw new ConvexError("Not authorized");
     }
-    if (!Number.isFinite(args.price) || !Number.isFinite(args.reversePrice)) {
+    if (!Number.isFinite(args.price)) {
       throw new ConvexError("Price must be a number");
+    }
+    if (
+      args.reversePrice !== undefined &&
+      !Number.isFinite(args.reversePrice)
+    ) {
+      throw new ConvexError("Reverse price must be a number");
     }
     const itemA = await ctx.db.get("items2", args.itemAId);
     const itemB = await ctx.db.get("items2", args.itemBId);
@@ -37,17 +43,20 @@ export const add = mutation({
       args.itemAId,
       args.itemBId,
     );
-    const reversePairId = await findOrCreateItemPair2(
-      ctx,
-      args.itemBId,
-      args.itemAId,
-    );
     const priceTickId = await ctx.db.insert("priceTick2", {
       userId,
       itemPairId,
       price: args.price,
       postTime,
     });
+    if (args.reversePrice === undefined) {
+      return { priceTickId, reversePriceTickId: null };
+    }
+    const reversePairId = await findOrCreateItemPair2(
+      ctx,
+      args.itemBId,
+      args.itemAId,
+    );
     const reversePriceTickId = await ctx.db.insert("priceTick2", {
       userId,
       itemPairId: reversePairId,
