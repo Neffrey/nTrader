@@ -67,5 +67,6 @@ export default defineSchema({
     gameLeague: defineTable({
       name: v.string(),
       internalId: v.string(),
+      game: v.union(v.literal("poe1"), v.literal("poe2")),
     }).index("by_internalId", ["internalId"]),
 });

@@ -17,6 +17,7 @@ export const add = mutation({
   args: {
     name: v.string(),
     internalId: v.string(),
+    game: v.union(v.literal("poe1"), v.literal("poe2")),
   },
   returns: v.id("gameLeague"),
   handler: async (ctx, args) => {
@@ -30,6 +31,10 @@ export const add = mutation({
       throw new ConvexError("Internal id cannot be empty");
     }
     await assertUniqueInternalId(ctx, internalId);
-    return await ctx.db.insert("gameLeague", { name, internalId });
+    return await ctx.db.insert("gameLeague", {
+      name,
+      internalId,
+      game: args.game,
+    });
   },
 });

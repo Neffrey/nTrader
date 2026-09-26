@@ -5,6 +5,8 @@ import { ConvexError } from "convex/values";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 
+type Game = "poe1" | "poe2";
+
 function internalIdFromName(name: string) {
   return name.trim().toLowerCase().replace(/\s+/g, "-");
 }
@@ -17,6 +19,7 @@ export function AddLeagueForm() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [game, setGame] = useState<Game>("poe1");
 
   return (
     <form
@@ -26,7 +29,7 @@ export function AddLeagueForm() {
         setSaving(true);
         setError(null);
         setSaved(false);
-        void addLeague({ name, internalId })
+        void addLeague({ name, internalId, game })
           .then(() => {
             setName("");
             setInternalId("");
@@ -47,6 +50,35 @@ export function AddLeagueForm() {
           });
       }}
     >
+      <fieldset className="flex items-center justify-center gap-6 py-1">
+        <legend className="sr-only">Game</legend>
+        <label className="flex items-center gap-2 text-sm text-neutral-100">
+          <input
+            type="radio"
+            name="league-game"
+            value="poe1"
+            checked={game === "poe1"}
+            onChange={() => {
+              setGame("poe1");
+              setSaved(false);
+            }}
+          />
+          PoE 1
+        </label>
+        <label className="flex items-center gap-2 text-sm text-neutral-100">
+          <input
+            type="radio"
+            name="league-game"
+            value="poe2"
+            checked={game === "poe2"}
+            onChange={() => {
+              setGame("poe2");
+              setSaved(false);
+            }}
+          />
+          PoE 2
+        </label>
+      </fieldset>
       <input
         value={name}
         placeholder="Name"
