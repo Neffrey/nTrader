@@ -43,7 +43,7 @@ export default defineSchema({
     itemPairs1: defineTable({
       itemAId: v.id("items1"),
       itemBId: v.id("items1"),
-    }),
+    }).index("by_itemAId_and_itemBId", ["itemAId", "itemBId"]),
     priceTick1: defineTable({
       userId: v.id("users"),
       itemPairId: v.id("itemPairs1"),
@@ -55,7 +55,7 @@ export default defineSchema({
     itemPairs2: defineTable({
       itemAId: v.id("items2"),
       itemBId: v.id("items2"),
-    }),
+    }).index("by_itemAId_and_itemBId", ["itemAId", "itemBId"]),
     priceTick2: defineTable({
       userId: v.id("users"),
       itemPairId: v.id("itemPairs2"),

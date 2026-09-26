@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isLocalHostRequest } from "@/lib/local-request";
 import { AddItem } from "./add-item";
+import { AddPricing } from "./add-pricing";
 
 export default async function Poe2Page() {
   const token = await convexAuthNextjsToken();
@@ -14,6 +15,7 @@ export default async function Poe2Page() {
     <main className="flex flex-1 flex-col items-center bg-neutral-950 px-6 py-16 text-neutral-100">
       <div className="flex w-full max-w-2xl flex-col items-center gap-8 text-center">
         <h1 className="text-4xl font-semibold tracking-tight">PoE 2</h1>
+        <AddPricing />
         <AddItem />
         <Link
           href="/"

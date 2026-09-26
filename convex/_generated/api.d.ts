@@ -10,8 +10,11 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as itemPairs from "../itemPairs.js";
 import type * as items1 from "../items1.js";
 import type * as items2 from "../items2.js";
+import type * as priceTicks1 from "../priceTicks1.js";
+import type * as priceTicks2 from "../priceTicks2.js";
 import type * as users from "../users.js";
 
 import type {
@@ -23,8 +26,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  itemPairs: typeof itemPairs;
   items1: typeof items1;
   items2: typeof items2;
+  priceTicks1: typeof priceTicks1;
+  priceTicks2: typeof priceTicks2;
   users: typeof users;
 }>;
 
