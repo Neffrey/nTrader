@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useState } from "react";
+import { FaArrowRight } from "react-icons/fa";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ItemSelect } from "@/components/item-select";
@@ -23,7 +24,7 @@ export function AddPricing() {
 
   return (
     <form
-      className="flex w-full max-w-md flex-col gap-3 text-left"
+      className="flex w-full flex-col gap-3 text-left"
       onSubmit={(event) => {
         event.preventDefault();
         if (itemAId === "" || itemBId === "") {
@@ -75,62 +76,69 @@ export function AddPricing() {
       }}
     >
       <h2 className="text-lg font-medium text-neutral-100">Add price</h2>
-      <ItemSelect
-        label="Item A"
-        items={sortedItems}
-        value={itemAId}
-        onChange={(id) => {
-          setItemAId(id as Id<"items1"> | "");
-          setSaved(false);
-        }}
-      />
-      <ItemSelect
-        label="Item B"
-        items={sortedItems}
-        value={itemBId}
-        onChange={(id) => {
-          setItemBId(id as Id<"items1"> | "");
-          setSaved(false);
-        }}
-      />
-      <label className="flex flex-col gap-1 text-sm text-neutral-400">
-        Price
-        <input
-          type="number"
-          inputMode="decimal"
-          step="any"
-          required
-          value={price}
-          placeholder="Price"
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-          onChange={(event) => {
-            setPrice(event.target.value);
+      <div className="flex w-full items-end gap-2">
+        <ItemSelect
+          className="min-w-0 flex-1"
+          label="Item A"
+          items={sortedItems}
+          value={itemAId}
+          onChange={(id) => {
+            setItemAId(id as Id<"items1"> | "");
             setSaved(false);
           }}
         />
-      </label>
-      <label className="flex flex-col gap-1 text-sm text-neutral-400">
-        Reverse price
-        <input
-          type="number"
-          inputMode="decimal"
-          step="any"
-          value={reversePrice}
-          placeholder="Reverse price"
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-          onChange={(event) => {
-            setReversePrice(event.target.value);
+        <span aria-hidden="true" className="shrink-0 px-1 pb-2 text-neutral-400">
+          <FaArrowRight className="h-4 w-4" />
+        </span>
+        <ItemSelect
+          className="min-w-0 flex-1"
+          label="Item B"
+          items={sortedItems}
+          value={itemBId}
+          onChange={(id) => {
+            setItemBId(id as Id<"items1"> | "");
             setSaved(false);
           }}
         />
-      </label>
-      <button
-        type="submit"
-        disabled={saving || items === undefined}
-        className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200 disabled:opacity-60"
-      >
-        {saving ? "Adding..." : "Add price"}
-      </button>
+        <label className="flex w-24 min-w-0 shrink flex-col gap-1 text-sm text-neutral-400">
+          Price
+          <input
+            type="number"
+            inputMode="decimal"
+            step="any"
+            required
+            value={price}
+            placeholder="Price"
+            className="w-full min-w-0 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+            onChange={(event) => {
+              setPrice(event.target.value);
+              setSaved(false);
+            }}
+          />
+        </label>
+        <label className="flex w-32 min-w-0 shrink flex-col gap-1 text-sm text-neutral-400">
+          Reverse price
+          <input
+            type="number"
+            inputMode="decimal"
+            step="any"
+            value={reversePrice}
+            placeholder="Reverse price"
+            className="w-full min-w-0 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+            onChange={(event) => {
+              setReversePrice(event.target.value);
+              setSaved(false);
+            }}
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={saving || items === undefined}
+          className="shrink-0 rounded-md bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 hover:bg-neutral-200 disabled:opacity-60"
+        >
+          {saving ? "Adding..." : "Add price"}
+        </button>
+      </div>
       {saved && <p className="text-sm text-neutral-400">Price added</p>}
       {error && (
         <p className="text-sm text-red-400" role="alert">

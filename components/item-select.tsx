@@ -30,11 +30,13 @@ export function ItemSelect({
   items,
   value,
   onChange,
+  className,
 }: {
   label: string;
   items: ItemOption[];
   value: string;
   onChange: (id: string) => void;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -65,7 +67,10 @@ export function ItemSelect({
   }, [open]);
 
   return (
-    <div className="relative flex flex-col gap-1 text-sm text-neutral-400" ref={rootRef}>
+    <div
+      className={`relative flex flex-col gap-1 text-sm text-neutral-400 ${className ?? ""}`}
+      ref={rootRef}
+    >
       <span id={labelId}>{label}</span>
       <button
         type="button"
@@ -73,7 +78,7 @@ export function ItemSelect({
         aria-expanded={open}
         aria-controls={listId}
         aria-labelledby={labelId}
-        className="flex items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-left text-sm outline-none focus:border-neutral-500"
+        className="flex w-full items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-left text-sm outline-none focus:border-neutral-500"
         onClick={() => {
           setOpen((current) => !current);
         }}
