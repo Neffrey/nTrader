@@ -5,15 +5,19 @@ import { useEffect, useId, useRef, useState } from "react";
 export function ItemMenu({
   showEdit,
   showDelete,
-  showComingSoon,
+  showFavorite,
+  favorite,
   onEdit,
   onDelete,
+  onFavorite,
 }: {
   showEdit: boolean;
   showDelete: boolean;
-  showComingSoon: boolean;
+  showFavorite: boolean;
+  favorite: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onFavorite: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -42,7 +46,7 @@ export function ItemMenu({
     };
   }, [open]);
 
-  if (!showEdit && !showDelete && !showComingSoon) {
+  if (!showEdit && !showDelete && !showFavorite) {
     return null;
   }
 
@@ -67,7 +71,7 @@ export function ItemMenu({
         <div
           id={menuId}
           role="menu"
-          className="fixed z-20 flex min-w-36 -translate-x-full flex-col rounded-md border border-neutral-700 bg-neutral-900 p-1 shadow-lg"
+          className="fixed z-20 flex min-w-44 -translate-x-full flex-col rounded-md border border-neutral-700 bg-neutral-900 p-1 shadow-lg"
           style={{ top: position.top, left: position.left }}
         >
           {showEdit && (
@@ -83,14 +87,17 @@ export function ItemMenu({
               Edit
             </button>
           )}
-          {showComingSoon && (
+          {showFavorite && (
             <button
               type="button"
               role="menuitem"
-              disabled
-              className="cursor-not-allowed rounded px-3 py-2 text-left text-sm text-neutral-500"
+              className="rounded px-3 py-2 text-left text-sm text-neutral-100 hover:bg-neutral-800"
+              onClick={() => {
+                setOpen(false);
+                onFavorite();
+              }}
             >
-              Coming soon
+              {favorite ? "Unmark as favorite" : "Mark as favorite"}
             </button>
           )}
           {showDelete && (

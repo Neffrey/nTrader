@@ -23,6 +23,8 @@ const currentUser = v.object({
   phone: v.union(v.string(), v.null()),
   poeAuthorized: v.boolean(),
   poeUsername: v.union(v.string(), v.null()),
+  poe1Favorites: v.array(v.id("items1")),
+  poe2Favorites: v.array(v.id("items2")),
   role: v.union(v.literal("user"), v.literal("admin"), v.literal("banned")),
 });
 
@@ -46,8 +48,63 @@ export const current = query({
       phone: user.phone ?? null,
       poeAuthorized: user.poeAccessToken !== undefined,
       poeUsername: user.poeUsername ?? null,
+      poe1Favorites: user.poe1Favorites ?? [],
+      poe2Favorites: user.poe2Favorites ?? [],
       role: user.role,
     };
+  },
+});
+
+async function requireSignedInUser(ctx: MutationCtx) {
+  const userId = await getAuthUserId(ctx);
+  if (userId === null) {
+    throw new ConvexError("Not authenticated");
+  }
+  const user = await ctx.db.get("users", userId);
+  if (user === null) {
+    throw new ConvexError("Not authenticated");
+  }
+  if (user.role === "banned") {
+    throw new ConvexError("Not authorized");
+  }
+  return user;
+}
+
+export const markPoe1Favorite = mutation({
+  args: { itemId: v.id("items1") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireSignedInUser(ctx);
+    const item = await ctx.db.get("items1", args.itemId);
+    if (item === null) {
+      throw new ConvexError("Item not found");
+    }
+    const favorites = user.poe1Favorites ?? [];
+    await ctx.db.patch("users", user._id, {
+      poe1Favorites: favorites.includes(args.itemId)
+        ? favorites.filter((id) => id !== args.itemId)
+        : [...favorites, args.itemId],
+    });
+    return null;
+  },
+});
+
+export const markPoe2Favorite = mutation({
+  args: { itemId: v.id("items2") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await requireSignedInUser(ctx);
+    const item = await ctx.db.get("items2", args.itemId);
+    if (item === null) {
+      throw new ConvexError("Item not found");
+    }
+    const favorites = user.poe2Favorites ?? [];
+    await ctx.db.patch("users", user._id, {
+      poe2Favorites: favorites.includes(args.itemId)
+        ? favorites.filter((id) => id !== args.itemId)
+        : [...favorites, args.itemId],
+    });
+    return null;
   },
 });
 

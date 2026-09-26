@@ -13,6 +13,7 @@ export function AddItem() {
   const currentUser = useQuery(api.users.current);
   const updateItem = useMutation(api.items1.update);
   const removeItem = useMutation(api.items1.remove);
+  const markFavorite = useMutation(api.users.markPoe1Favorite);
   const [editingId, setEditingId] = useState<Id<"items1"> | null>(null);
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
@@ -29,7 +30,7 @@ export function AddItem() {
   const role = currentUser?.role;
   const showEdit = role === "admin";
   const showDelete = role === "admin";
-  const showComingSoon = role === "user" || role === "admin";
+  const showFavorite = role === "user" || role === "admin";
   const sortedItems = [...items].sort((left, right) => {
     const comparison = left.name.localeCompare(right.name, undefined, {
       sensitivity: "base",
@@ -42,6 +43,9 @@ export function AddItem() {
         item.name.toLocaleLowerCase().includes(trimmedQuery),
       )
     : sortedItems;
+  const favorites = (currentUser?.poe1Favorites ?? [])
+    .map((id) => items.find((item) => item._id === id))
+    .filter((item) => item !== undefined);
 
   return (
     <div className="flex w-full flex-col gap-2 text-left">
@@ -50,6 +54,37 @@ export function AddItem() {
           {error}
         </p>
       )}
+      <section className="mb-4 flex flex-col gap-2">
+        <h2 className="text-lg font-medium text-neutral-100">My favorites</h2>
+        {favorites.length === 0 ? (
+          <p className="text-sm text-neutral-400">No favorites yet</p>
+        ) : (
+          <ul className="rounded-md border border-neutral-800">
+            {favorites.map((item) => (
+              <li
+                key={item._id}
+                className="flex items-center gap-3 border-b border-neutral-800 px-3 py-2 last:border-b-0"
+              >
+                {item.image ? (
+                  <Image
+                    src={item.image}
+                    alt=""
+                    width={40}
+                    height={40}
+                    unoptimized
+                    className="h-10 w-10 rounded-md object-cover"
+                  />
+                ) : (
+                  <span className="h-10 w-10 shrink-0" />
+                )}
+                <span className="min-w-0 truncate text-sm text-neutral-100">
+                  {item.name}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <input
         type="search"
         value={query}
@@ -126,7 +161,24 @@ export function AddItem() {
                       <ItemMenu
                         showEdit={showEdit}
                         showDelete={showDelete}
-                        showComingSoon={showComingSoon}
+                        showFavorite={showFavorite}
+                        favorite={(currentUser?.poe1Favorites ?? []).includes(
+                          item._id,
+                        )}
+                        onFavorite={() => {
+                          setError(null);
+                          void markFavorite({ itemId: item._id }).catch(
+                            (err: unknown) => {
+                              if (err instanceof ConvexError) {
+                                setError(String(err.data));
+                              } else if (err instanceof Error) {
+                                setError(err.message);
+                              } else {
+                                setError("Could not mark item as favorite");
+                              }
+                            },
+                          );
+                        }}
                         onEdit={() => {
                           setEditingId(item._id);
                           setName(item.name);

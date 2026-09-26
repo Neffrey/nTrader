@@ -22,6 +22,8 @@ export default defineSchema({
     poeScope: v.optional(v.string()),
     poeUsername: v.optional(v.string()),
     poeSub: v.optional(v.string()),
+    poe1Favorites: v.optional(v.array(v.id("items1"))),
+    poe2Favorites: v.optional(v.array(v.id("items2"))),
     role: v.union(v.literal("user"), v.literal("admin"), v.literal("banned")),
   })
     .index("email", ["email"])
