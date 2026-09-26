@@ -20,6 +20,7 @@ export function AddItem() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [nameSort, setNameSort] = useState<"asc" | "desc">("asc");
+  const [query, setQuery] = useState("");
 
   if (!items || items.length === 0) {
     return null;
@@ -35,6 +36,12 @@ export function AddItem() {
     });
     return nameSort === "asc" ? comparison : -comparison;
   });
+  const trimmedQuery = query.trim().toLocaleLowerCase();
+  const visibleItems = trimmedQuery
+    ? sortedItems.filter((item) =>
+        item.name.toLocaleLowerCase().includes(trimmedQuery),
+      )
+    : sortedItems;
 
   return (
     <div className="flex w-full flex-col gap-2 text-left">
@@ -43,6 +50,16 @@ export function AddItem() {
           {error}
         </p>
       )}
+      <input
+        type="search"
+        value={query}
+        placeholder="Search items"
+        aria-label="Search items by name"
+        className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+        onChange={(event) => {
+          setQuery(event.target.value);
+        }}
+      />
       <div className="rounded-md border border-neutral-800">
         <table className="w-full border-collapse text-left">
           <thead>
@@ -78,7 +95,17 @@ export function AddItem() {
             </tr>
           </thead>
           <tbody>
-            {sortedItems.map((item) => (
+            {visibleItems.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-3 py-4 text-sm text-neutral-400"
+                >
+                  No items match that name
+                </td>
+              </tr>
+            ) : null}
+            {visibleItems.map((item) => (
               <Fragment key={item._id}>
                 <tr className="border-b border-neutral-800 last:border-b-0">
                   <td className="px-3 py-2">
