@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import "./globals.css";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
+import { convexUrlForHost } from "@/lib/convex-deployment";
 import { isLocalHostRequest } from "@/lib/local-request";
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,15 +31,17 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const host = (await headers()).get("host");
   const localHost = await isLocalHostRequest();
+  const convexUrl = convexUrlForHost(host);
 
   return (
-    <ConvexAuthNextjsServerProvider>
+    <ConvexAuthNextjsServerProvider storageNamespace={convexUrl}>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <ConvexClientProvider>
+          <ConvexClientProvider convexUrl={convexUrl}>
             <div className="flex min-h-screen flex-col">
               <Header localHost={localHost} />
               <div className="flex flex-1 flex-col">{children}</div>

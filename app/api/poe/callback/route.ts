@@ -2,6 +2,7 @@ import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchMutation } from "convex/nextjs";
 import { NextRequest, NextResponse } from "next/server";
 import { api } from "@/convex/_generated/api";
+import { convexUrlForHost } from "@/lib/convex-deployment";
 import { env } from "@/env";
 
 const SCOPE = "account:profile";
@@ -41,7 +42,10 @@ export async function GET(request: NextRequest) {
       redirectUri,
       codeVerifier,
     });
-    await fetchMutation(api.users.savePoeCredentials, credentials, { token });
+    await fetchMutation(api.users.savePoeCredentials, credentials, {
+      token,
+      url: convexUrlForHost(request.headers.get("host")),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Authorization failed";
     return finish(accountError(request, message));

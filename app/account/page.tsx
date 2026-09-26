@@ -2,8 +2,10 @@ import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import { convexUrlForHost } from "@/lib/convex-deployment";
 import { isLocalHostRequest } from "@/lib/local-request";
 import { DisplayNameEditor } from "./display-name-editor";
 
@@ -19,7 +21,10 @@ export default async function AccountPage({
   }
 
   const user = token
-    ? await fetchQuery(api.users.current, {}, { token })
+    ? await fetchQuery(api.users.current, {}, {
+        token,
+        url: convexUrlForHost((await headers()).get("host")),
+      })
     : null;
   if (user === null && !localHost) {
     redirect("/");

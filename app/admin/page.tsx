@@ -1,8 +1,10 @@
 import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import { fetchQuery } from "convex/nextjs";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import { convexUrlForHost } from "@/lib/convex-deployment";
 import { isLocalHostRequest } from "@/lib/local-request";
 import { AddItemForm } from "./add-item-form";
 import { AddLeagueForm } from "./add-league-form";
@@ -14,7 +16,10 @@ export default async function AdminPage() {
     redirect("/");
   }
   if (!localHost) {
-    const user = await fetchQuery(api.users.current, {}, { token });
+    const user = await fetchQuery(api.users.current, {}, {
+      token,
+      url: convexUrlForHost((await headers()).get("host")),
+    });
     if (user === null || user.role !== "admin") {
       redirect("/");
     }
