@@ -5,6 +5,7 @@ import { ConvexError } from "convex/values";
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { ItemSelect } from "@/components/item-select";
 
 export function AddPricing() {
   const items = useQuery(api.items1.list);
@@ -12,6 +13,7 @@ export function AddPricing() {
   const [itemAId, setItemAId] = useState<Id<"items1"> | "">("");
   const [itemBId, setItemBId] = useState<Id<"items1"> | "">("");
   const [price, setPrice] = useState("");
+  const [reversePrice, setReversePrice] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -25,19 +27,27 @@ export function AddPricing() {
       onSubmit={(event) => {
         event.preventDefault();
         if (itemAId === "" || itemBId === "") {
+          setError("Select an item");
           return;
         }
         const parsed = Number(price);
-        if (!Number.isFinite(parsed)) {
+        const parsedReverse = Number(reversePrice);
+        if (!Number.isFinite(parsed) || !Number.isFinite(parsedReverse)) {
           setError("Price must be a number");
           return;
         }
         setSaving(true);
         setError(null);
         setSaved(false);
-        void addPrice({ itemAId, itemBId, price: parsed })
+        void addPrice({
+          itemAId,
+          itemBId,
+          price: parsed,
+          reversePrice: parsedReverse,
+        })
           .then(() => {
             setPrice("");
+            setReversePrice("");
             setSaved(true);
           })
           .catch((err: unknown) => {
@@ -55,44 +65,24 @@ export function AddPricing() {
       }}
     >
       <h2 className="text-lg font-medium text-neutral-100">Add price</h2>
-      <label className="flex flex-col gap-1 text-sm text-neutral-400">
-        Item A
-        <select
-          required
-          value={itemAId}
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-          onChange={(event) => {
-            setItemAId(event.target.value as Id<"items1"> | "");
-            setSaved(false);
-          }}
-        >
-          <option value="">Select an item</option>
-          {sortedItems.map((item) => (
-            <option key={item._id} value={item._id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex flex-col gap-1 text-sm text-neutral-400">
-        Item B
-        <select
-          required
-          value={itemBId}
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-          onChange={(event) => {
-            setItemBId(event.target.value as Id<"items1"> | "");
-            setSaved(false);
-          }}
-        >
-          <option value="">Select an item</option>
-          {sortedItems.map((item) => (
-            <option key={item._id} value={item._id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <ItemSelect
+        label="Item A"
+        items={sortedItems}
+        value={itemAId}
+        onChange={(id) => {
+          setItemAId(id as Id<"items1"> | "");
+          setSaved(false);
+        }}
+      />
+      <ItemSelect
+        label="Item B"
+        items={sortedItems}
+        value={itemBId}
+        onChange={(id) => {
+          setItemBId(id as Id<"items1"> | "");
+          setSaved(false);
+        }}
+      />
       <label className="flex flex-col gap-1 text-sm text-neutral-400">
         Price
         <input
@@ -105,6 +95,22 @@ export function AddPricing() {
           className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
           onChange={(event) => {
             setPrice(event.target.value);
+            setSaved(false);
+          }}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm text-neutral-400">
+        Reverse price
+        <input
+          type="number"
+          inputMode="decimal"
+          step="any"
+          required
+          value={reversePrice}
+          placeholder="Reverse price"
+          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+          onChange={(event) => {
+            setReversePrice(event.target.value);
             setSaved(false);
           }}
         />
