@@ -10,7 +10,7 @@ import { api } from "@/convex/_generated/api";
 const memberLinks = [
   { href: "/poe1", label: "PoE 1", admin: false },
   { href: "/poe2", label: "PoE 2", admin: false },
-  { href: "/add-item", label: "Add item", admin: true },
+  { href: "/admin", label: "Admin", admin: true },
   { href: "/account", label: "Account", admin: false },
 ];
 

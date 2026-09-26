@@ -10,6 +10,7 @@ const isMemberPage = createRouteMatcher([
   "/account",
   "/poe1",
   "/poe2",
+  "/admin",
   "/add-item",
 ]);
 

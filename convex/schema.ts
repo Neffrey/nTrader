@@ -64,4 +64,8 @@ export default defineSchema({
     })
       .index("by_itemPairId", ["itemPairId"])
       .index("by_time", ["postTime"]),
+    gameLeague: defineTable({
+      name: v.string(),
+      internalId: v.string(),
+    }).index("by_internalId", ["internalId"]),
 });
