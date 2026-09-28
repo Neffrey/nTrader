@@ -14,6 +14,7 @@ import type * as http from "../http.js";
 import type * as itemPairs from "../itemPairs.js";
 import type * as items1 from "../items1.js";
 import type * as items2 from "../items2.js";
+import type * as priceAmounts from "../priceAmounts.js";
 import type * as priceTicks1 from "../priceTicks1.js";
 import type * as priceTicks2 from "../priceTicks2.js";
 import type * as users from "../users.js";
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   itemPairs: typeof itemPairs;
   items1: typeof items1;
   items2: typeof items2;
+  priceAmounts: typeof priceAmounts;
   priceTicks1: typeof priceTicks1;
   priceTicks2: typeof priceTicks2;
   users: typeof users;

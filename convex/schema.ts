@@ -45,26 +45,32 @@ export default defineSchema({
     itemPairs1: defineTable({
       itemAId: v.id("items1"),
       itemBId: v.id("items1"),
-    }).index("by_itemAId_and_itemBId", ["itemAId", "itemBId"]),
+    })
+      .index("by_itemAId_and_itemBId", ["itemAId", "itemBId"])
+      .index("by_itemBId_and_itemAId", ["itemBId", "itemAId"]),
     priceTick1: defineTable({
       userId: v.id("users"),
       itemPairId: v.id("itemPairs1"),
-      price: v.number(),
+      amountA: v.number(),
+      amountB: v.number(),
       postTime: v.number(),
     })
-      .index("by_itemPairId", ["itemPairId"])
+      .index("by_itemPairId_and_postTime", ["itemPairId", "postTime"])
       .index("by_time", ["postTime"]),
     itemPairs2: defineTable({
       itemAId: v.id("items2"),
       itemBId: v.id("items2"),
-    }).index("by_itemAId_and_itemBId", ["itemAId", "itemBId"]),
+    })
+      .index("by_itemAId_and_itemBId", ["itemAId", "itemBId"])
+      .index("by_itemBId_and_itemAId", ["itemBId", "itemAId"]),
     priceTick2: defineTable({
       userId: v.id("users"),
       itemPairId: v.id("itemPairs2"),
-      price: v.number(),
+      amountA: v.number(),
+      amountB: v.number(),
       postTime: v.number(),
     })
-      .index("by_itemPairId", ["itemPairId"])
+      .index("by_itemPairId_and_postTime", ["itemPairId", "postTime"])
       .index("by_time", ["postTime"]),
     gameLeague: defineTable({
       name: v.string(),
