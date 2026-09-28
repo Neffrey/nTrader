@@ -55,6 +55,23 @@ export const current = query({
   },
 });
 
+const MAX_FAVORITES = 40;
+
+function nextFavorites<ItemId extends string>(
+  favorites: ItemId[],
+  itemId: ItemId,
+) {
+  if (favorites.includes(itemId)) {
+    return favorites.filter((id) => id !== itemId);
+  }
+  if (favorites.length >= MAX_FAVORITES) {
+    throw new ConvexError(
+      `Favorite limit reached (${MAX_FAVORITES}). Unfavorite an item first.`,
+    );
+  }
+  return [...favorites, itemId];
+}
+
 async function requireSignedInUser(ctx: MutationCtx) {
   const userId = await getAuthUserId(ctx);
   if (userId === null) {
@@ -79,11 +96,8 @@ export const markPoe1Favorite = mutation({
     if (item === null) {
       throw new ConvexError("Item not found");
     }
-    const favorites = user.poe1Favorites ?? [];
     await ctx.db.patch("users", user._id, {
-      poe1Favorites: favorites.includes(args.itemId)
-        ? favorites.filter((id) => id !== args.itemId)
-        : [...favorites, args.itemId],
+      poe1Favorites: nextFavorites(user.poe1Favorites ?? [], args.itemId),
     });
     return null;
   },
@@ -98,11 +112,8 @@ export const markPoe2Favorite = mutation({
     if (item === null) {
       throw new ConvexError("Item not found");
     }
-    const favorites = user.poe2Favorites ?? [];
     await ctx.db.patch("users", user._id, {
-      poe2Favorites: favorites.includes(args.itemId)
-        ? favorites.filter((id) => id !== args.itemId)
-        : [...favorites, args.itemId],
+      poe2Favorites: nextFavorites(user.poe2Favorites ?? [], args.itemId),
     });
     return null;
   },
@@ -112,10 +123,7 @@ export const updateDisplayName = mutation({
   args: { displayName: v.string() },
   returns: v.string(),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new ConvexError("Not authenticated");
-    }
+    const user = await requireSignedInUser(ctx);
     const displayName = args.displayName.trim();
     if (displayName.length === 0) {
       throw new ConvexError("Display name cannot be empty");
@@ -123,7 +131,7 @@ export const updateDisplayName = mutation({
     if (displayName.length > 80) {
       throw new ConvexError("Display name must be 80 characters or fewer");
     }
-    await ctx.db.patch("users", userId, { displayName });
+    await ctx.db.patch("users", user._id, { displayName });
     return displayName;
   },
 });
@@ -139,11 +147,8 @@ export const savePoeCredentials = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new ConvexError("Not authenticated");
-    }
-    await ctx.db.patch("users", userId, {
+    const user = await requireSignedInUser(ctx);
+    await ctx.db.patch("users", user._id, {
       poeAccessToken: args.accessToken,
       poeScope: args.scope,
       poeUsername: args.poeUsername,

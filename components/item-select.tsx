@@ -31,12 +31,14 @@ export function ItemSelect({
   value,
   onChange,
   className,
+  disabled = false,
 }: {
   label: string;
   items: ItemOption[];
   value: string;
   onChange: (id: string) => void;
   className?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -78,8 +80,12 @@ export function ItemSelect({
         aria-expanded={open}
         aria-controls={listId}
         aria-labelledby={labelId}
-        className="flex w-full items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-left text-sm outline-none focus:border-neutral-500"
+        disabled={disabled}
+        className="flex w-full items-center gap-2 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-left text-sm outline-none focus:border-neutral-500 disabled:cursor-not-allowed"
         onClick={() => {
+          if (disabled) {
+            return;
+          }
           setOpen((current) => !current);
         }}
       >

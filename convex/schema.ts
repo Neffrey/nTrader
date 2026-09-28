@@ -56,6 +56,7 @@ export default defineSchema({
       postTime: v.number(),
     })
       .index("by_itemPairId_and_postTime", ["itemPairId", "postTime"])
+      .index("by_userId", ["userId"])
       .index("by_time", ["postTime"]),
     itemPairs2: defineTable({
       itemAId: v.id("items2"),
@@ -71,6 +72,7 @@ export default defineSchema({
       postTime: v.number(),
     })
       .index("by_itemPairId_and_postTime", ["itemPairId", "postTime"])
+      .index("by_userId", ["userId"])
       .index("by_time", ["postTime"]),
     gameLeague: defineTable({
       name: v.string(),

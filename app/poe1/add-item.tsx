@@ -10,7 +10,8 @@ import { ItemMenu } from "@/components/item-menu";
 import { ItemPairPrices } from "@/components/item-pair-prices";
 
 export function AddItem() {
-  const items = useQuery(api.items1.list);
+  const catalog = useQuery(api.items1.list);
+  const items = catalog?.items;
   const currentUser = useQuery(api.users.current);
   const updateItem = useMutation(api.items1.update);
   const removeItem = useMutation(api.items1.remove);
@@ -258,6 +259,11 @@ export function AddItem() {
           </div>
         )}
       </section>
+      {catalog.truncated ? (
+        <p className="text-sm text-neutral-400">
+          This list is the first 2,000 items. More items exist in the catalog.
+        </p>
+      ) : null}
       <input
         type="search"
         value={query}

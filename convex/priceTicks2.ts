@@ -1,6 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { findOrCreateItemPair2 } from "./itemPairs";
 import { simplifyAmounts } from "./priceAmounts";
@@ -21,6 +20,9 @@ export const add = mutation({
     const user = await ctx.db.get("users", userId);
     if (user === null || user.role === "banned") {
       throw new ConvexError("Not authorized");
+    }
+    if (args.itemAId === args.itemBId) {
+      throw new ConvexError("Choose two different items");
     }
     if (!Number.isFinite(args.amountA) || args.amountA <= 0) {
       throw new ConvexError("Item A amount must be greater than zero");
@@ -73,46 +75,39 @@ export const latestWithFavorites = query({
       return [];
     }
 
-    const pairs = new Map<
-      Id<"itemPairs2">,
-      { itemAId: Id<"items2">; itemBId: Id<"items2"> }
-    >();
-    for (const favoriteId of favorites) {
-      const asItemA = await ctx.db
-        .query("itemPairs2")
-        .withIndex("by_itemAId_and_itemBId", (q) => q.eq("itemAId", favoriteId))
-        .collect();
-      const asItemB = await ctx.db
-        .query("itemPairs2")
-        .withIndex("by_itemBId_and_itemAId", (q) => q.eq("itemBId", favoriteId))
-        .collect();
-      for (const pair of [...asItemA, ...asItemB]) {
-        pairs.set(pair._id, { itemAId: pair.itemAId, itemBId: pair.itemBId });
-      }
-    }
-
     const quotes = [];
-    for (const [pairId, pair] of pairs) {
-      if (pair.itemAId === pair.itemBId) {
-        continue;
+    for (const itemAId of favorites) {
+      for (const itemBId of favorites) {
+        if (itemAId === itemBId) {
+          continue;
+        }
+        const pair = await ctx.db
+          .query("itemPairs2")
+          .withIndex("by_itemAId_and_itemBId", (q) =>
+            q.eq("itemAId", itemAId).eq("itemBId", itemBId),
+          )
+          .unique();
+        if (pair === null) {
+          continue;
+        }
+        const latest = await ctx.db
+          .query("priceTick2")
+          .withIndex("by_itemPairId_and_postTime", (q) =>
+            q.eq("itemPairId", pair._id),
+          )
+          .order("desc")
+          .take(1);
+        const tick = latest[0];
+        if (tick === undefined) {
+          continue;
+        }
+        quotes.push({
+          itemAId: pair.itemAId,
+          itemBId: pair.itemBId,
+          amountA: tick.amountA,
+          amountB: tick.amountB,
+        });
       }
-      const latest = await ctx.db
-        .query("priceTick2")
-        .withIndex("by_itemPairId_and_postTime", (q) =>
-          q.eq("itemPairId", pairId),
-        )
-        .order("desc")
-        .take(1);
-      const tick = latest[0];
-      if (tick === undefined) {
-        continue;
-      }
-      quotes.push({
-        itemAId: pair.itemAId,
-        itemBId: pair.itemBId,
-        amountA: tick.amountA,
-        amountB: tick.amountB,
-      });
     }
     return quotes;
   },
