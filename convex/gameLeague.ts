@@ -21,6 +21,7 @@ export const listByGame = query({
   returns: v.array(
     v.object({
       _id: v.id("gameLeague"),
+      _creationTime: v.number(),
       name: v.string(),
     }),
   ),
@@ -34,7 +35,11 @@ export const listByGame = query({
       .withIndex("by_game", (q) => q.eq("game", args.game))
       .take(100);
     return rows
-      .map((row) => ({ _id: row._id, name: row.name }))
+      .map((row) => ({
+        _id: row._id,
+        _creationTime: row._creationTime,
+        name: row.name,
+      }))
       .sort((left, right) =>
         left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
       );

@@ -22,6 +22,18 @@ type SelectedLeague = {
 
 const SelectedLeagueContext = createContext<SelectedLeague | null>(null);
 
+function latestLeagueId(
+  leagues: { _id: Id<"gameLeague">; _creationTime: number }[],
+) {
+  let latest: (typeof leagues)[number] | undefined;
+  for (const league of leagues) {
+    if (latest === undefined || league._creationTime > latest._creationTime) {
+      latest = league;
+    }
+  }
+  return latest?._id ?? "";
+}
+
 export function SelectedLeagueProvider({
   game,
   children,
@@ -30,18 +42,55 @@ export function SelectedLeagueProvider({
   children: ReactNode;
 }) {
   const storageKey = `ntrader.league.${game}`;
+  const leagues = useQuery(api.gameLeague.listByGame, { game });
   const [leagueId, setLeagueIdState] = useState<Id<"gameLeague"> | "">("");
+  const [storedId, setStoredId] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+  const [pinned, setPinned] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored) {
-      setLeagueIdState(stored as Id<"gameLeague">);
-    }
+    setStoredId(window.localStorage.getItem(storageKey));
+    setRestored(true);
   }, [storageKey]);
+
+  useEffect(() => {
+    if (!restored || leagues === undefined) {
+      return;
+    }
+    const currentValid =
+      leagueId !== "" && leagues.some((league) => league._id === leagueId);
+    if (pinned && currentValid) {
+      return;
+    }
+    if (pinned && !currentValid) {
+      window.localStorage.removeItem(storageKey);
+      setStoredId(null);
+      setPinned(false);
+    }
+    if (
+      !pinned &&
+      storedId !== null &&
+      leagues.some((league) => league._id === storedId)
+    ) {
+      setLeagueIdState(storedId as Id<"gameLeague">);
+      setPinned(true);
+      return;
+    }
+    if (!pinned && storedId !== null) {
+      window.localStorage.removeItem(storageKey);
+      setStoredId(null);
+    }
+    const next = latestLeagueId(leagues);
+    if (next !== leagueId) {
+      setLeagueIdState(next);
+    }
+  }, [restored, leagues, leagueId, pinned, storedId, storageKey]);
 
   const setLeagueId = useCallback(
     (next: Id<"gameLeague"> | "") => {
       setLeagueIdState(next);
+      setPinned(next !== "");
+      setStoredId(next === "" ? null : next);
       if (next === "") {
         window.localStorage.removeItem(storageKey);
       } else {
@@ -75,15 +124,6 @@ export function GameLeagueSelect({ game }: { game: Game }) {
   const leagues = useQuery(api.gameLeague.listByGame, { game });
   const { leagueId, setLeagueId } = useSelectedLeague();
 
-  useEffect(() => {
-    if (leagues === undefined || leagueId === "") {
-      return;
-    }
-    if (!leagues.some((league) => league._id === leagueId)) {
-      setLeagueId("");
-    }
-  }, [leagues, leagueId, setLeagueId]);
-
   return (
     <label className="flex w-56 shrink-0 flex-col gap-1 text-left text-sm text-neutral-300">
       <span className="sr-only">League</span>
@@ -95,7 +135,11 @@ export function GameLeagueSelect({ game }: { game: Game }) {
           setLeagueId(event.target.value as Id<"gameLeague"> | "");
         }}
       >
-        <option value="">Select a league</option>
+        {leagueId === "" ? (
+          <option value="">
+            {leagues === undefined ? "Loading leagues" : "Select a league"}
+          </option>
+        ) : null}
         {(leagues ?? []).map((league) => (
           <option key={league._id} value={league._id}>
             {league.name}
