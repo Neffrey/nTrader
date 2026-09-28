@@ -51,11 +51,17 @@ export default defineSchema({
     priceTick1: defineTable({
       userId: v.id("users"),
       itemPairId: v.id("itemPairs1"),
+      gameLeagueId: v.optional(v.id("gameLeague")),
       amountA: v.number(),
       amountB: v.number(),
       postTime: v.number(),
     })
       .index("by_itemPairId_and_postTime", ["itemPairId", "postTime"])
+      .index("by_itemPairId_and_gameLeagueId_and_postTime", [
+        "itemPairId",
+        "gameLeagueId",
+        "postTime",
+      ])
       .index("by_userId", ["userId"])
       .index("by_time", ["postTime"]),
     itemPairs2: defineTable({
@@ -67,16 +73,24 @@ export default defineSchema({
     priceTick2: defineTable({
       userId: v.id("users"),
       itemPairId: v.id("itemPairs2"),
+      gameLeagueId: v.optional(v.id("gameLeague")),
       amountA: v.number(),
       amountB: v.number(),
       postTime: v.number(),
     })
       .index("by_itemPairId_and_postTime", ["itemPairId", "postTime"])
+      .index("by_itemPairId_and_gameLeagueId_and_postTime", [
+        "itemPairId",
+        "gameLeagueId",
+        "postTime",
+      ])
       .index("by_userId", ["userId"])
       .index("by_time", ["postTime"]),
     gameLeague: defineTable({
       name: v.string(),
       internalId: v.string(),
       game: v.union(v.literal("poe1"), v.literal("poe2")),
-    }).index("by_internalId", ["internalId"]),
+    })
+      .index("by_internalId", ["internalId"])
+      .index("by_game", ["game"]),
 });

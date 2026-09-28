@@ -6,6 +6,10 @@ import Image from "next/image";
 import { Fragment, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import {
+  GameLeagueSelect,
+  useSelectedLeague,
+} from "@/components/game-league-select";
 import { ItemMenu } from "@/components/item-menu";
 import { ItemPairPrices } from "@/components/item-pair-prices";
 
@@ -16,7 +20,11 @@ export function AddItem() {
   const updateItem = useMutation(api.items1.update);
   const removeItem = useMutation(api.items1.remove);
   const markFavorite = useMutation(api.users.markPoe1Favorite);
-  const pairQuotes = useQuery(api.priceTicks1.latestWithFavorites);
+  const { leagueId } = useSelectedLeague();
+  const pairQuotes = useQuery(
+    api.priceTicks1.latestWithFavorites,
+    leagueId === "" ? "skip" : { gameLeagueId: leagueId },
+  );
   const [editingId, setEditingId] = useState<Id<"items1"> | null>(null);
   const [editingSource, setEditingSource] = useState<"favorites" | "list" | null>(
     null,
@@ -234,6 +242,19 @@ export function AddItem() {
           {error}
         </p>
       )}
+      <div className="mb-2 flex items-center gap-2">
+        <input
+          type="search"
+          value={query}
+          placeholder="Search items"
+          aria-label="Search items by name"
+          className="min-w-0 flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+          onChange={(event) => {
+            setQuery(event.target.value);
+          }}
+        />
+        <GameLeagueSelect game="poe1" />
+      </div>
       <section className="mb-4 flex flex-col gap-2">
         <h2 className="text-lg font-medium text-neutral-100">My favorites</h2>
         {favorites.length === 0 ? (
@@ -264,16 +285,6 @@ export function AddItem() {
           This list is the first 2,000 items. More items exist in the catalog.
         </p>
       ) : null}
-      <input
-        type="search"
-        value={query}
-        placeholder="Search items"
-        aria-label="Search items by name"
-        className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-        onChange={(event) => {
-          setQuery(event.target.value);
-        }}
-      />
       <div className="rounded-md border border-neutral-800">
         <table className="w-full border-collapse text-left">
           <thead>

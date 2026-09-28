@@ -6,6 +6,7 @@ import { useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useSelectedLeague } from "@/components/game-league-select";
 import { ItemSelect } from "@/components/item-select";
 
 const amountClassName =
@@ -36,6 +37,7 @@ export function AddPricing() {
   const catalog = useQuery(api.items2.list);
   const items = catalog?.items;
   const addPrice = useMutation(api.priceTicks2.add);
+  const { leagueId } = useSelectedLeague();
   const [itemAId, setItemAId] = useState<Id<"items2"> | "">("");
   const [itemBId, setItemBId] = useState<Id<"items2"> | "">("");
   const [amountA, setAmountA] = useState("");
@@ -57,6 +59,10 @@ export function AddPricing() {
       className="flex w-full flex-col gap-3 text-left"
       onSubmit={(event) => {
         event.preventDefault();
+        if (leagueId === "") {
+          setError("Select a league");
+          return;
+        }
         if (itemAId === "" || itemBId === "") {
           setError("Select an item");
           return;
@@ -93,6 +99,7 @@ export function AddPricing() {
         void addPrice({
           itemAId,
           itemBId,
+          gameLeagueId: leagueId,
           amountA: parsedA.amount,
           amountB: parsedB.amount,
         })
@@ -101,6 +108,7 @@ export function AddPricing() {
               await addPrice({
                 itemAId: itemBId,
                 itemBId: itemAId,
+                gameLeagueId: leagueId,
                 amountA: parsedReverseA.amount,
                 amountB: parsedReverseB.amount,
               });

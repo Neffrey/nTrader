@@ -8,6 +8,7 @@ export const add = mutation({
   args: {
     itemAId: v.id("items2"),
     itemBId: v.id("items2"),
+    gameLeagueId: v.id("gameLeague"),
     amountA: v.number(),
     amountB: v.number(),
   },
@@ -35,6 +36,10 @@ export const add = mutation({
     if (itemA === null || itemB === null) {
       throw new ConvexError("Item not found");
     }
+    const league = await ctx.db.get("gameLeague", args.gameLeagueId);
+    if (league === null || league.game !== "poe2") {
+      throw new ConvexError("League not found");
+    }
     const itemPairId = await findOrCreateItemPair2(
       ctx,
       args.itemAId,
@@ -44,6 +49,7 @@ export const add = mutation({
     return await ctx.db.insert("priceTick2", {
       userId,
       itemPairId,
+      gameLeagueId: args.gameLeagueId,
       amountA: amounts.amountA,
       amountB: amounts.amountB,
       postTime: Date.now(),
@@ -52,7 +58,9 @@ export const add = mutation({
 });
 
 export const latestWithFavorites = query({
-  args: {},
+  args: {
+    gameLeagueId: v.id("gameLeague"),
+  },
   returns: v.array(
     v.object({
       itemAId: v.id("items2"),
@@ -61,7 +69,7 @@ export const latestWithFavorites = query({
       amountB: v.number(),
     }),
   ),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
       return [];
@@ -72,6 +80,10 @@ export const latestWithFavorites = query({
     }
     const favorites = user.poe2Favorites ?? [];
     if (favorites.length === 0) {
+      return [];
+    }
+    const league = await ctx.db.get("gameLeague", args.gameLeagueId);
+    if (league === null || league.game !== "poe2") {
       return [];
     }
 
@@ -92,8 +104,8 @@ export const latestWithFavorites = query({
         }
         const latest = await ctx.db
           .query("priceTick2")
-          .withIndex("by_itemPairId_and_postTime", (q) =>
-            q.eq("itemPairId", pair._id),
+          .withIndex("by_itemPairId_and_gameLeagueId_and_postTime", (q) =>
+            q.eq("itemPairId", pair._id).eq("gameLeagueId", args.gameLeagueId),
           )
           .order("desc")
           .take(1);

@@ -1,5 +1,6 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import { requireAdmin } from "./users";
 
@@ -12,6 +13,33 @@ async function assertUniqueInternalId(ctx: MutationCtx, internalId: string) {
     throw new ConvexError("Internal id is already used");
   }
 }
+
+export const listByGame = query({
+  args: {
+    game: v.union(v.literal("poe1"), v.literal("poe2")),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("gameLeague"),
+      name: v.string(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      return [];
+    }
+    const rows = await ctx.db
+      .query("gameLeague")
+      .withIndex("by_game", (q) => q.eq("game", args.game))
+      .take(100);
+    return rows
+      .map((row) => ({ _id: row._id, name: row.name }))
+      .sort((left, right) =>
+        left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+      );
+  },
+});
 
 export const add = mutation({
   args: {
