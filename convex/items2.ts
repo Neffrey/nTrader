@@ -64,6 +64,7 @@ export const add = mutation({
     name: v.string(),
     image: v.string(),
     internalId: v.string(),
+    categoryId: v.id("itemCategory"),
   },
   returns: v.id("items2"),
   handler: async (ctx, args) => {
@@ -80,11 +81,19 @@ export const add = mutation({
     if (!image.startsWith("https://") && !image.startsWith("http://")) {
       throw new ConvexError("Image must be an http or https URL");
     }
+    const category = await ctx.db.get("itemCategory", args.categoryId);
+    if (category === null) {
+      throw new ConvexError("Category not found");
+    }
+    if (category.game !== "poe2") {
+      throw new ConvexError("Category is for a different game");
+    }
     await assertUniqueInternalId(ctx, internalId);
     return await ctx.db.insert("items2", {
       name,
       image,
       internalId,
+      categoryId: args.categoryId,
     });
   },
 });
@@ -120,6 +129,7 @@ export const update = mutation({
       name,
       image,
       internalId,
+      categoryId: existing.categoryId,
     });
     return null;
   },

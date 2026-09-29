@@ -1,9 +1,10 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { useEffect, useState } from "react";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 type Game = "poe1" | "poe2";
 
@@ -24,11 +25,14 @@ function internalIdFromName(name: string) {
 export function AddItemForm() {
   const addItem1 = useMutation(api.items1.add);
   const addItem2 = useMutation(api.items2.add);
+  const categories = useQuery(api.itemCategory.list);
   const [game, setGame] = useState<Game>("poe1");
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
   const [internalId, setInternalId] = useState("");
   const [internalIdTouched, setInternalIdTouched] = useState(false);
+  const [categoryId, setCategoryId] = useState<Id<"itemCategory"> | "">("");
+  const [categoryTouched, setCategoryTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedGame, setSavedGame] = useState<Game | null>(null);
   const [saving, setSaving] = useState(false);
@@ -37,10 +41,32 @@ export function AddItemForm() {
     setGame(readStoredGame());
   }, []);
 
+  const categoriesForGame = (categories ?? []).filter(
+    (category) => category.game === game,
+  );
+
+  useEffect(() => {
+    if (categories === undefined) {
+      return;
+    }
+    const forGame = categories.filter((category) => category.game === game);
+    const selectedStillExists =
+      categoryId !== "" && forGame.some((category) => category._id === categoryId);
+    if (categoryTouched && selectedStillExists) {
+      return;
+    }
+    const currency = forGame.find(
+      (category) => category.name.toLowerCase() === "currency",
+    );
+    const next = currency ?? forGame[0];
+    setCategoryId(next?._id ?? "");
+  }, [categories, categoryId, categoryTouched, game]);
+
   function selectGame(next: Game) {
     setGame(next);
     window.localStorage.setItem(gameStorageKey, next);
     setSavedGame(null);
+    setCategoryTouched(false);
   }
 
   return (
@@ -51,16 +77,22 @@ export function AddItemForm() {
         setSaving(true);
         setError(null);
         setSavedGame(null);
+        if (categoryId === "") {
+          setError("Select a category");
+          setSaving(false);
+          return;
+        }
         const save =
           game === "poe1"
-            ? addItem1({ name, image, internalId })
-            : addItem2({ name, image, internalId });
+            ? addItem1({ name, image, internalId, categoryId })
+            : addItem2({ name, image, internalId, categoryId });
         void save
           .then(() => {
             setName("");
             setImage("");
             setInternalId("");
             setInternalIdTouched(false);
+            setCategoryTouched(false);
             setSavedGame(game);
           })
           .catch((err: unknown) => {
@@ -104,6 +136,27 @@ export function AddItemForm() {
           PoE 2
         </label>
       </fieldset>
+      <label className="flex flex-col gap-1 text-sm text-neutral-300">
+        <span>Category</span>
+        <select
+          required
+          value={categoryId}
+          aria-label="Category"
+          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+          onChange={(event) => {
+            setCategoryId(event.target.value as Id<"itemCategory">);
+            setCategoryTouched(true);
+            setSavedGame(null);
+          }}
+        >
+          {categoryId === "" ? <option value="">Select a category</option> : null}
+          {categoriesForGame.map((category) => (
+            <option key={category._id} value={category._id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <input
         value={name}
         placeholder="Name"

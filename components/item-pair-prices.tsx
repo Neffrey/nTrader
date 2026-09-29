@@ -54,7 +54,9 @@ export function ItemPairPrices<T extends string>({
           : quote.itemBId === itemId
             ? quote.itemAId
             : null;
-      if (otherId === null || otherId === itemId || !favoriteIds.has(otherId)) {
+      const includesFavorite =
+        favoriteIds.has(quote.itemAId) || favoriteIds.has(quote.itemBId);
+      if (otherId === null || otherId === itemId || !includesFavorite) {
         return [];
       }
       const itemA = itemsById.get(quote.itemAId);

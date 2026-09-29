@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as gameLeague from "../gameLeague.js";
 import type * as http from "../http.js";
+import type * as itemCategory from "../itemCategory.js";
 import type * as itemPairs from "../itemPairs.js";
 import type * as items1 from "../items1.js";
 import type * as items2 from "../items2.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   gameLeague: typeof gameLeague;
   http: typeof http;
+  itemCategory: typeof itemCategory;
   itemPairs: typeof itemPairs;
   items1: typeof items1;
   items2: typeof items2;

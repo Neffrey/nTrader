@@ -4,6 +4,8 @@ import { mutation, query } from "./_generated/server";
 import { findOrCreateItemPair1 } from "./itemPairs";
 import { simplifyAmounts } from "./priceAmounts";
 
+const PAIRS_PER_FAVORITE = 50;
+
 export const add = mutation({
   args: {
     itemAId: v.id("items1"),
@@ -87,21 +89,22 @@ export const latestWithFavorites = query({
       return [];
     }
 
+    const seenPairIds = new Set<string>();
     const quotes = [];
-    for (const itemAId of favorites) {
-      for (const itemBId of favorites) {
-        if (itemAId === itemBId) {
+    for (const favoriteId of favorites) {
+      const pairsAsA = await ctx.db
+        .query("itemPairs1")
+        .withIndex("by_itemAId_and_itemBId", (q) => q.eq("itemAId", favoriteId))
+        .take(PAIRS_PER_FAVORITE);
+      const pairsAsB = await ctx.db
+        .query("itemPairs1")
+        .withIndex("by_itemBId_and_itemAId", (q) => q.eq("itemBId", favoriteId))
+        .take(PAIRS_PER_FAVORITE);
+      for (const pair of pairsAsA.concat(pairsAsB)) {
+        if (seenPairIds.has(pair._id)) {
           continue;
         }
-        const pair = await ctx.db
-          .query("itemPairs1")
-          .withIndex("by_itemAId_and_itemBId", (q) =>
-            q.eq("itemAId", itemAId).eq("itemBId", itemBId),
-          )
-          .unique();
-        if (pair === null) {
-          continue;
-        }
+        seenPairIds.add(pair._id);
         const latest = await ctx.db
           .query("priceTick1")
           .withIndex("by_itemPairId_and_gameLeagueId_and_postTime", (q) =>

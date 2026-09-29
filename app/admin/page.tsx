@@ -8,6 +8,7 @@ import { convexUrlForHost } from "@/lib/convex-deployment";
 import { isLocalHostRequest } from "@/lib/local-request";
 import { AddItemForm } from "./add-item-form";
 import { AddLeagueForm } from "./add-league-form";
+import { CategoryAdmin } from "./category-admin";
 
 export default async function AdminPage() {
   const localHost = await isLocalHostRequest();
@@ -32,6 +33,10 @@ export default async function AdminPage() {
         <section className="flex w-full flex-col items-center gap-4">
           <h2 className="text-lg font-medium text-neutral-100">Add item</h2>
           <AddItemForm />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">Categories</h2>
+          <CategoryAdmin />
         </section>
         <section className="flex w-full flex-col items-center gap-4">
           <h2 className="text-lg font-medium text-neutral-100">Add league</h2>

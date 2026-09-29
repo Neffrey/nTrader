@@ -28,20 +28,28 @@ export default defineSchema({
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
+    itemCategory: defineTable({
+      name: v.string(),
+      game: v.union(v.literal("poe1"), v.literal("poe2")),
+    }).index("by_game_and_name", ["game", "name"]),
     items1: defineTable({
       name: v.string(),
       image: v.optional(v.string()),
       internalId: v.string(),
+      categoryId: v.id("itemCategory"),
     })
       .index("by_name", ["name"])
-      .index("by_internalId", ["internalId"]),
+      .index("by_internalId", ["internalId"])
+      .index("by_categoryId", ["categoryId"]),
     items2: defineTable({
       name: v.string(),
       image: v.string(),
       internalId: v.string(),
+      categoryId: v.id("itemCategory"),
     })
       .index("by_name", ["name"])
-      .index("by_internalId", ["internalId"]),
+      .index("by_internalId", ["internalId"])
+      .index("by_categoryId", ["categoryId"]),
     itemPairs1: defineTable({
       itemAId: v.id("items1"),
       itemBId: v.id("items1"),

@@ -10,6 +10,7 @@ import {
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import { currencyCategoryId } from "./itemCategory";
 import { requireAdmin } from "./users";
 
 async function assertUniqueInternalId(
@@ -83,6 +84,7 @@ export const add = mutation({
     name: v.string(),
     image: v.string(),
     internalId: v.string(),
+    categoryId: v.id("itemCategory"),
   },
   returns: v.id("items1"),
   handler: async (ctx, args) => {
@@ -99,11 +101,19 @@ export const add = mutation({
     if (!image.startsWith("https://") && !image.startsWith("http://")) {
       throw new ConvexError("Image must be an http or https URL");
     }
+    const category = await ctx.db.get("itemCategory", args.categoryId);
+    if (category === null) {
+      throw new ConvexError("Category not found");
+    }
+    if (category.game !== "poe1") {
+      throw new ConvexError("Category is for a different game");
+    }
     await assertUniqueInternalId(ctx, internalId);
     return await ctx.db.insert("items1", {
       name,
       image,
       internalId,
+      categoryId: args.categoryId,
     });
   },
 });
@@ -142,6 +152,7 @@ export const update = mutation({
     await ctx.db.replace("items1", args.id, {
       name,
       internalId,
+      categoryId: existing.categoryId,
       ...(image.length === 0 ? {} : { image }),
     });
     return null;
@@ -291,15 +302,20 @@ export const upsertBatch = internalMutation({
       const current = existing[0];
       if (current === undefined) {
         await assertUniqueInternalId(ctx, item.internalId);
+        const categoryId = await currencyCategoryId(ctx, "poe1");
         await ctx.db.insert("items1", {
           name: item.name,
           internalId: item.internalId,
+          categoryId,
           ...(item.image === null ? {} : { image: item.image }),
         });
         written += 1;
         continue;
       }
-      const patch: { image?: string; internalId?: string } = {};
+      const patch: {
+        image?: string;
+        internalId?: string;
+      } = {};
       if (item.image !== null && current.image !== item.image) {
         patch.image = item.image;
       }
