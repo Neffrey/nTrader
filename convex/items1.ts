@@ -385,6 +385,159 @@ export const upsertBatch = internalMutation({
   },
 });
 
+const catalogImportItem = v.object({
+  name: v.string(),
+  image: v.union(v.string(), v.null()),
+  internalId: v.string(),
+  categoryName: v.string(),
+});
+
+export const deletePoe1ItemByInternalId = internalMutation({
+  args: { internalId: v.string() },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("items1")
+      .withIndex("by_internalId", (q) => q.eq("internalId", args.internalId))
+      .take(1);
+    const row = rows[0];
+    if (row === undefined) {
+      return false;
+    }
+    await ctx.db.delete("items1", row._id);
+    await ctx.scheduler.runAfter(0, internal.items1.cleanupRemovedItem, {
+      itemId: row._id,
+      phase: "pairsAsA",
+      pairId: null,
+      cursor: null,
+    });
+    return true;
+  },
+});
+
+/** Replace PoE1 items1 from a destin/export payload; ensures categories by name. */
+export const replacePoe1Catalog = internalMutation({
+  args: {
+    items: v.array(catalogImportItem),
+    deleteMissing: v.boolean(),
+  },
+  returns: v.object({
+    upserted: v.number(),
+    deleted: v.number(),
+    categoryNames: v.array(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const categoryIds = new Map<string, Id<"itemCategory">>();
+    for (const item of args.items) {
+      const categoryName = item.categoryName.trim();
+      if (categoryName.length === 0) {
+        throw new ConvexError(`Item ${item.internalId} missing categoryName`);
+      }
+      if (!categoryIds.has(categoryName)) {
+        categoryIds.set(
+          categoryName,
+          await ensureCategoryId(ctx, "poe1", categoryName),
+        );
+      }
+    }
+
+    let upserted = 0;
+    const keepInternalIds = new Set<string>();
+    for (const item of args.items) {
+      const categoryId = categoryIds.get(item.categoryName.trim());
+      if (categoryId === undefined) {
+        throw new ConvexError(`Category missing for ${item.internalId}`);
+      }
+      keepInternalIds.add(item.internalId);
+      const byName = await ctx.db
+        .query("items1")
+        .withIndex("by_name", (q) => q.eq("name", item.name))
+        .take(1);
+      const byInternalId = await ctx.db
+        .query("items1")
+        .withIndex("by_internalId", (q) => q.eq("internalId", item.internalId))
+        .take(1);
+      const current = byName[0] ?? byInternalId[0];
+      if (current === undefined) {
+        await assertUniqueInternalId(ctx, item.internalId);
+        await ctx.db.insert("items1", {
+          name: item.name,
+          internalId: item.internalId,
+          categoryId,
+          ...(item.image === null ? {} : { image: item.image }),
+        });
+        upserted += 1;
+        continue;
+      }
+      const patch: {
+        name?: string;
+        image?: string;
+        internalId?: string;
+        categoryId?: Id<"itemCategory">;
+      } = {};
+      if (current.name !== item.name) {
+        patch.name = item.name;
+      }
+      if (item.image === null) {
+        if (current.image !== undefined) {
+          await ctx.db.replace("items1", current._id, {
+            name: item.name,
+            internalId: item.internalId,
+            categoryId,
+          });
+          upserted += 1;
+          continue;
+        }
+      } else if (current.image !== item.image) {
+        patch.image = item.image;
+      }
+      if (current.internalId !== item.internalId) {
+        await assertUniqueInternalId(ctx, item.internalId, current._id);
+        patch.internalId = item.internalId;
+      }
+      if (current.categoryId !== categoryId) {
+        patch.categoryId = categoryId;
+      }
+      if (
+        patch.name !== undefined ||
+        patch.image !== undefined ||
+        patch.internalId !== undefined ||
+        patch.categoryId !== undefined
+      ) {
+        await ctx.db.patch("items1", current._id, patch);
+        upserted += 1;
+      }
+    }
+
+    let deleted = 0;
+    if (args.deleteMissing) {
+      const existing = await ctx.db
+        .query("items1")
+        .withIndex("by_name")
+        .take(ITEM_LIST_LIMIT + 1);
+      for (const row of existing) {
+        if (keepInternalIds.has(row.internalId)) {
+          continue;
+        }
+        await ctx.db.delete("items1", row._id);
+        await ctx.scheduler.runAfter(0, internal.items1.cleanupRemovedItem, {
+          itemId: row._id,
+          phase: "pairsAsA",
+          pairId: null,
+          cursor: null,
+        });
+        deleted += 1;
+      }
+    }
+
+    return {
+      upserted,
+      deleted,
+      categoryNames: [...categoryIds.keys()].sort(),
+    };
+  },
+});
+
 export const fetchAll = action({
   args: {},
   returns: v.object({
