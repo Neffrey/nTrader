@@ -10,6 +10,7 @@ import { AddItemForm } from "./add-item-form";
 import { AddLeagueForm } from "./add-league-form";
 import { CategoryAdmin } from "./category-admin";
 import { ImportPoeNinjaCurrency } from "./import-poe-ninja-currency";
+import { ImportPoeNinjaFragments } from "./import-poe-ninja-fragments";
 
 export default async function AdminPage() {
   const localHost = await isLocalHostRequest();
@@ -40,6 +41,12 @@ export default async function AdminPage() {
             Import poe.ninja currency
           </h2>
           <ImportPoeNinjaCurrency />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja fragments
+          </h2>
+          <ImportPoeNinjaFragments />
         </section>
         <section className="flex w-full flex-col items-center gap-4">
           <h2 className="text-lg font-medium text-neutral-100">Categories</h2>

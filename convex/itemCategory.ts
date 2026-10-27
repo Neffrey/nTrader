@@ -11,20 +11,35 @@ type Game = "poe1" | "poe2";
 
 const gameOrder: Record<Game, number> = { poe1: 0, poe2: 1 };
 
-export async function currencyCategoryId(
+export async function ensureCategoryId(
   ctx: MutationCtx,
   game: Game,
+  name: string,
 ): Promise<Id<"itemCategory">> {
   const existing = await ctx.db
     .query("itemCategory")
     .withIndex("by_game_and_name", (q) =>
-      q.eq("game", game).eq("name", "Currency"),
+      q.eq("game", game).eq("name", name),
     )
     .unique();
   if (existing !== null) {
     return existing._id;
   }
-  return await ctx.db.insert("itemCategory", { name: "Currency", game });
+  return await ctx.db.insert("itemCategory", { name, game });
+}
+
+export async function currencyCategoryId(
+  ctx: MutationCtx,
+  game: Game,
+): Promise<Id<"itemCategory">> {
+  return await ensureCategoryId(ctx, game, "Currency");
+}
+
+export async function fragmentsCategoryId(
+  ctx: MutationCtx,
+  game: Game,
+): Promise<Id<"itemCategory">> {
+  return await ensureCategoryId(ctx, game, "Fragments");
 }
 
 async function assertUniqueName(
