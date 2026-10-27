@@ -2,12 +2,13 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
 import {
   action,
+  internalAction,
   internalMutation,
   internalQuery,
   mutation,
   query,
 } from "./_generated/server";
-import type { MutationCtx } from "./_generated/server";
+import type { ActionCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { currencyCategoryId } from "./itemCategory";
@@ -43,12 +44,17 @@ const catalogItem = v.object({
 const ITEM_LIST_LIMIT = 2000;
 const TICK_DELETE_BATCH = 50;
 
-const USER_AGENT = "nTrader/0.1 (local development; PoE1 item catalog)";
+const USER_AGENT =
+  "nTrader/0.1 (https://github.com/Neffrey/nTrader; PoE1 item catalog)";
 const IMAGE_ORIGIN = "https://web.poecdn.com";
 const CATALOG_URLS = [
   "https://www.pathofexile.com/api/trade/data/static",
   "https://www.pathofexile.com/api/trade/data/items",
 ];
+const POE_NINJA_LEAGUES_URL = "https://poe.ninja/poe1/api/economy/leagues";
+const POE_NINJA_CURRENCY_OVERVIEW_URL =
+  "https://poe.ninja/poe1/api/economy/exchange/current/overview";
+const DEFAULT_POE_NINJA_LEAGUE = "Allflame";
 
 export const list = query({
   args: {},
@@ -295,11 +301,16 @@ export const upsertBatch = internalMutation({
   handler: async (ctx, args) => {
     let written = 0;
     for (const item of args.items) {
-      const existing = await ctx.db
+      const byName = await ctx.db
         .query("items1")
         .withIndex("by_name", (q) => q.eq("name", item.name))
         .take(1);
-      const current = existing[0];
+      const byInternalId = await ctx.db
+        .query("items1")
+        .withIndex("by_internalId", (q) => q.eq("internalId", item.internalId))
+        .take(1);
+      // Prefer name match when both indexes hit different rows.
+      const current = byName[0] ?? byInternalId[0];
       if (current === undefined) {
         await assertUniqueInternalId(ctx, item.internalId);
         const categoryId = await currencyCategoryId(ctx, "poe1");
@@ -313,9 +324,13 @@ export const upsertBatch = internalMutation({
         continue;
       }
       const patch: {
+        name?: string;
         image?: string;
         internalId?: string;
       } = {};
+      if (current.name !== item.name) {
+        patch.name = item.name;
+      }
       if (item.image !== null && current.image !== item.image) {
         patch.image = item.image;
       }
@@ -323,7 +338,11 @@ export const upsertBatch = internalMutation({
         await assertUniqueInternalId(ctx, item.internalId, current._id);
         patch.internalId = item.internalId;
       }
-      if (patch.image !== undefined || patch.internalId !== undefined) {
+      if (
+        patch.name !== undefined ||
+        patch.image !== undefined ||
+        patch.internalId !== undefined
+      ) {
         await ctx.db.patch("items1", current._id, patch);
         written += 1;
       }
@@ -354,6 +373,54 @@ export const fetchAll = action({
   },
 });
 
+export const fetchPoeNinjaCurrency = action({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: v.object({
+    count: v.number(),
+    written: v.number(),
+    league: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
+    void adminCheck;
+    return await importPoeNinjaCurrency(ctx, args.league);
+  },
+});
+
+export const seedPoeNinjaCurrency = internalAction({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: v.object({
+    count: v.number(),
+    written: v.number(),
+    league: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    return await importPoeNinjaCurrency(ctx, args.league);
+  },
+});
+
+async function importPoeNinjaCurrency(
+  ctx: ActionCtx,
+  requestedLeague?: string,
+) {
+  const league = await resolvePoeNinjaLeague(requestedLeague);
+  const items = await loadPoeNinjaCurrency(league);
+  let written = 0;
+  const batchSize = 200;
+  for (let index = 0; index < items.length; index += batchSize) {
+    const batchWritten: number = await ctx.runMutation(
+      internal.items1.upsertBatch,
+      { items: items.slice(index, index + batchSize) },
+    );
+    written += batchWritten;
+  }
+  return { count: items.length, written, league };
+}
+
 async function loadCatalog(url: string) {
   const response = await fetch(url, {
     headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
@@ -362,6 +429,107 @@ async function loadCatalog(url: string) {
     throw new ConvexError(`Item catalog request failed (${response.status})`);
   }
   return readCatalog(await response.json());
+}
+
+async function resolvePoeNinjaLeague(requested?: string) {
+  const preferred = requested?.trim() || DEFAULT_POE_NINJA_LEAGUE;
+  const response = await fetch(POE_NINJA_LEAGUES_URL, {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new ConvexError(
+      `poe.ninja leagues request failed (${response.status})`,
+    );
+  }
+  const data: unknown = await response.json();
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new ConvexError("poe.ninja leagues response was not recognized");
+  }
+  const leagues = data.flatMap((entry) => {
+    if (
+      typeof entry !== "object" ||
+      entry === null ||
+      !("id" in entry) ||
+      typeof entry.id !== "string" ||
+      entry.id.trim().length === 0
+    ) {
+      return [];
+    }
+    return [entry.id.trim()];
+  });
+  if (leagues.includes(preferred)) {
+    return preferred;
+  }
+  const first = leagues[0];
+  if (first === undefined) {
+    throw new ConvexError("poe.ninja returned no leagues");
+  }
+  return first;
+}
+
+async function loadPoeNinjaCurrency(league: string) {
+  const url = new URL(POE_NINJA_CURRENCY_OVERVIEW_URL);
+  url.searchParams.set("league", league);
+  url.searchParams.set("type", "Currency");
+  const response = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new ConvexError(
+      `poe.ninja currency overview failed (${response.status})`,
+    );
+  }
+  return readPoeNinjaCurrency(await response.json());
+}
+
+function readPoeNinjaCurrency(data: unknown) {
+  if (typeof data !== "object" || data === null || !("items" in data)) {
+    throw new ConvexError("poe.ninja currency response was not recognized");
+  }
+  const itemsField = data.items;
+  if (!Array.isArray(itemsField)) {
+    throw new ConvexError("poe.ninja currency response was not recognized");
+  }
+
+  const byInternalId = new Map<
+    string,
+    { name: string; image: string | null; internalId: string }
+  >();
+  for (const entry of itemsField) {
+    if (typeof entry !== "object" || entry === null) {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const internalId =
+      typeof record.id === "string" ? record.id.trim() : "";
+    const name = typeof record.name === "string" ? record.name.trim() : "";
+    if (internalId.length === 0 || name.length === 0) {
+      continue;
+    }
+    const image = absoluteImageUrl(record.image);
+    const current = byInternalId.get(internalId);
+    if (current === undefined || (current.image === null && image !== null)) {
+      byInternalId.set(internalId, { name, image, internalId });
+    }
+  }
+  return [...byInternalId.values()];
+}
+
+function absoluteImageUrl(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const image = value.trim();
+  if (image.length === 0) {
+    return null;
+  }
+  if (image.startsWith("https://") || image.startsWith("http://")) {
+    return image;
+  }
+  if (image.startsWith("/")) {
+    return `${IMAGE_ORIGIN}${image}`;
+  }
+  return null;
 }
 
 function mergeCatalogs(
