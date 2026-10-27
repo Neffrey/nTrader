@@ -55,11 +55,12 @@ const POE_NINJA_LEAGUES_URL = "https://poe.ninja/poe1/api/economy/leagues";
 const POE_NINJA_EXCHANGE_OVERVIEW_URL =
   "https://poe.ninja/poe1/api/economy/exchange/current/overview";
 const DEFAULT_POE_NINJA_LEAGUE = "Allflame";
-const POE_NINJA_OVERVIEW_TYPES = ["Currency", "Fragment"] as const;
+const POE_NINJA_OVERVIEW_TYPES = ["Currency", "Fragment", "Tattoo"] as const;
 type PoeNinjaOverviewType = (typeof POE_NINJA_OVERVIEW_TYPES)[number];
 const CATEGORY_BY_OVERVIEW_TYPE: Record<PoeNinjaOverviewType, string> = {
   Currency: "Currency",
   Fragment: "Fragments",
+  Tattoo: "Tattoos",
 };
 
 export const list = query({
@@ -445,6 +446,36 @@ export const seedPoeNinjaFragments = internalAction({
   }),
   handler: async (ctx, args) => {
     return await importPoeNinjaOverview(ctx, "Fragment", args.league);
+  },
+});
+
+export const fetchPoeNinjaTattoos = action({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: v.object({
+    count: v.number(),
+    written: v.number(),
+    league: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
+    void adminCheck;
+    return await importPoeNinjaOverview(ctx, "Tattoo", args.league);
+  },
+});
+
+export const seedPoeNinjaTattoos = internalAction({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: v.object({
+    count: v.number(),
+    written: v.number(),
+    league: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    return await importPoeNinjaOverview(ctx, "Tattoo", args.league);
   },
 });
 

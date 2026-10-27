@@ -42,6 +42,13 @@ export async function fragmentsCategoryId(
   return await ensureCategoryId(ctx, game, "Fragments");
 }
 
+export async function tattoosCategoryId(
+  ctx: MutationCtx,
+  game: Game,
+): Promise<Id<"itemCategory">> {
+  return await ensureCategoryId(ctx, game, "Tattoos");
+}
+
 async function assertUniqueName(
   ctx: MutationCtx,
   game: Game,
