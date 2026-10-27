@@ -49,6 +49,27 @@ export async function tattoosCategoryId(
   return await ensureCategoryId(ctx, game, "Tattoos");
 }
 
+export async function omensCategoryId(
+  ctx: MutationCtx,
+  game: Game,
+): Promise<Id<"itemCategory">> {
+  return await ensureCategoryId(ctx, game, "Omens");
+}
+
+export async function divinationCardsCategoryId(
+  ctx: MutationCtx,
+  game: Game,
+): Promise<Id<"itemCategory">> {
+  return await ensureCategoryId(ctx, game, "Divination Cards");
+}
+
+export async function oilsCategoryId(
+  ctx: MutationCtx,
+  game: Game,
+): Promise<Id<"itemCategory">> {
+  return await ensureCategoryId(ctx, game, "Oils");
+}
+
 async function assertUniqueName(
   ctx: MutationCtx,
   game: Game,
