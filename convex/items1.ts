@@ -55,12 +55,30 @@ const POE_NINJA_LEAGUES_URL = "https://poe.ninja/poe1/api/economy/leagues";
 const POE_NINJA_EXCHANGE_OVERVIEW_URL =
   "https://poe.ninja/poe1/api/economy/exchange/current/overview";
 const DEFAULT_POE_NINJA_LEAGUE = "Allflame";
-const POE_NINJA_OVERVIEW_TYPES = ["Currency", "Fragment", "Tattoo"] as const;
+const POE_NINJA_OVERVIEW_TYPES = [
+  "Currency",
+  "Fragment",
+  "Tattoo",
+  "Omen",
+  "DivinationCard",
+  "Oil",
+] as const;
 type PoeNinjaOverviewType = (typeof POE_NINJA_OVERVIEW_TYPES)[number];
+const poeNinjaOverviewType = v.union(
+  v.literal("Currency"),
+  v.literal("Fragment"),
+  v.literal("Tattoo"),
+  v.literal("Omen"),
+  v.literal("DivinationCard"),
+  v.literal("Oil"),
+);
 const CATEGORY_BY_OVERVIEW_TYPE: Record<PoeNinjaOverviewType, string> = {
   Currency: "Currency",
   Fragment: "Fragments",
   Tattoo: "Tattoos",
+  Omen: "Omens",
+  DivinationCard: "Divination Cards",
+  Oil: "Oils",
 };
 
 export const list = query({
@@ -389,15 +407,42 @@ export const fetchAll = action({
   },
 });
 
+const poeNinjaImportReturns = v.object({
+  count: v.number(),
+  written: v.number(),
+  league: v.string(),
+  categoryName: v.string(),
+});
+
+export const fetchPoeNinjaCatalog = action({
+  args: {
+    type: poeNinjaOverviewType,
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
+    void adminCheck;
+    return await importPoeNinjaOverview(ctx, args.type, args.league);
+  },
+});
+
+export const seedPoeNinjaCatalog = internalAction({
+  args: {
+    type: poeNinjaOverviewType,
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    return await importPoeNinjaOverview(ctx, args.type, args.league);
+  },
+});
+
 export const fetchPoeNinjaCurrency = action({
   args: {
     league: v.optional(v.string()),
   },
-  returns: v.object({
-    count: v.number(),
-    written: v.number(),
-    league: v.string(),
-  }),
+  returns: poeNinjaImportReturns,
   handler: async (ctx, args) => {
     const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
     void adminCheck;
@@ -409,11 +454,7 @@ export const seedPoeNinjaCurrency = internalAction({
   args: {
     league: v.optional(v.string()),
   },
-  returns: v.object({
-    count: v.number(),
-    written: v.number(),
-    league: v.string(),
-  }),
+  returns: poeNinjaImportReturns,
   handler: async (ctx, args) => {
     return await importPoeNinjaOverview(ctx, "Currency", args.league);
   },
@@ -423,11 +464,7 @@ export const fetchPoeNinjaFragments = action({
   args: {
     league: v.optional(v.string()),
   },
-  returns: v.object({
-    count: v.number(),
-    written: v.number(),
-    league: v.string(),
-  }),
+  returns: poeNinjaImportReturns,
   handler: async (ctx, args) => {
     const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
     void adminCheck;
@@ -439,11 +476,7 @@ export const seedPoeNinjaFragments = internalAction({
   args: {
     league: v.optional(v.string()),
   },
-  returns: v.object({
-    count: v.number(),
-    written: v.number(),
-    league: v.string(),
-  }),
+  returns: poeNinjaImportReturns,
   handler: async (ctx, args) => {
     return await importPoeNinjaOverview(ctx, "Fragment", args.league);
   },
@@ -453,11 +486,7 @@ export const fetchPoeNinjaTattoos = action({
   args: {
     league: v.optional(v.string()),
   },
-  returns: v.object({
-    count: v.number(),
-    written: v.number(),
-    league: v.string(),
-  }),
+  returns: poeNinjaImportReturns,
   handler: async (ctx, args) => {
     const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
     void adminCheck;
@@ -469,13 +498,75 @@ export const seedPoeNinjaTattoos = internalAction({
   args: {
     league: v.optional(v.string()),
   },
-  returns: v.object({
-    count: v.number(),
-    written: v.number(),
-    league: v.string(),
-  }),
+  returns: poeNinjaImportReturns,
   handler: async (ctx, args) => {
     return await importPoeNinjaOverview(ctx, "Tattoo", args.league);
+  },
+});
+
+export const fetchPoeNinjaOmens = action({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
+    void adminCheck;
+    return await importPoeNinjaOverview(ctx, "Omen", args.league);
+  },
+});
+
+export const seedPoeNinjaOmens = internalAction({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    return await importPoeNinjaOverview(ctx, "Omen", args.league);
+  },
+});
+
+export const fetchPoeNinjaDivinationCards = action({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
+    void adminCheck;
+    return await importPoeNinjaOverview(ctx, "DivinationCard", args.league);
+  },
+});
+
+export const seedPoeNinjaDivinationCards = internalAction({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    return await importPoeNinjaOverview(ctx, "DivinationCard", args.league);
+  },
+});
+
+export const fetchPoeNinjaOils = action({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
+    void adminCheck;
+    return await importPoeNinjaOverview(ctx, "Oil", args.league);
+  },
+});
+
+export const seedPoeNinjaOils = internalAction({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: poeNinjaImportReturns,
+  handler: async (ctx, args) => {
+    return await importPoeNinjaOverview(ctx, "Oil", args.league);
   },
 });
 
@@ -499,7 +590,12 @@ async function importPoeNinjaOverview(
     );
     written += batchWritten;
   }
-  return { count: items.length, written, league };
+  return {
+    count: items.length,
+    written,
+    league,
+    categoryName,
+  };
 }
 
 async function loadCatalog(url: string) {
