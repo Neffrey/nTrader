@@ -251,14 +251,9 @@ export function AddLeagueForm() {
                       </form>
                     ) : (
                       <>
-                        <div className="min-w-0 flex-1">
-                          <span className="block truncate text-sm text-neutral-100">
-                            {league.name}
-                          </span>
-                          <span className="block truncate text-xs text-neutral-500">
-                            {league.internalId}
-                          </span>
-                        </div>
+                        <span className="min-w-0 flex-1 truncate text-sm text-neutral-100">
+                          {league.name}
+                        </span>
                         <button
                           type="button"
                           className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-900"
