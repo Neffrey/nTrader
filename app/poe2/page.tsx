@@ -1,17 +1,9 @@
-import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SelectedLeagueProvider } from "@/components/game-league-select";
-import { isLocalHostRequest } from "@/lib/local-request";
 import { AddItem } from "./add-item";
 import { AddPricing } from "./add-pricing";
 
-export default async function Poe2Page() {
-  const token = await convexAuthNextjsToken();
-  if (!token && !(await isLocalHostRequest())) {
-    redirect("/");
-  }
-
+export default function Poe2Page() {
   return (
     <SelectedLeagueProvider game="poe2">
       <main className="flex flex-1 flex-col items-center bg-neutral-950 px-6 py-16 text-neutral-100">
