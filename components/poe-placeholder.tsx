@@ -1,18 +1,18 @@
-import Link from "next/link";
+import { type PoePlaceholderView } from "@/lib/poe-view";
 
-const titles = {
+const titles: Record<PoePlaceholderView, string> = {
   flipping: "Flipping",
   assembly: "Assembly",
   investing: "Investing",
   crafts: "Crafts",
-} as const;
+};
 
 export function PoePlaceholderPage({
   game,
   section,
 }: {
   game: "poe1" | "poe2";
-  section: keyof typeof titles;
+  section: PoePlaceholderView;
 }) {
   const gameLabel = game === "poe1" ? "PoE 1" : "PoE 2";
   const title = titles[section];
@@ -26,12 +26,6 @@ export function PoePlaceholderPage({
           </h1>
           <p className="mt-3 text-neutral-400">Coming soon.</p>
         </div>
-        <Link
-          href={`/${game}`}
-          className="text-sm text-neutral-400 underline underline-offset-4 hover:text-neutral-200"
-        >
-          Back to Prices
-        </Link>
       </div>
     </main>
   );

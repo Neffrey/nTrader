@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { parsePoeView, poeViewHref, type PoeView } from "@/lib/poe-view";
 
-const sections = [
-  { segment: "", label: "Prices" },
-  { segment: "flipping", label: "Flipping" },
-  { segment: "assembly", label: "Assembly" },
-  { segment: "investing", label: "Investing" },
-  { segment: "crafts", label: "Crafts" },
-] as const;
+const sections: Array<{ view: PoeView; label: string }> = [
+  { view: "prices", label: "Prices" },
+  { view: "flipping", label: "Flipping" },
+  { view: "assembly", label: "Assembly" },
+  { view: "investing", label: "Investing" },
+  { view: "crafts", label: "Crafts" },
+];
 
 export function PoeSecondaryNav({ game }: { game: "poe1" | "poe2" }) {
-  const pathname = usePathname();
-  const base = `/${game}`;
+  const searchParams = useSearchParams();
+  const activeView = parsePoeView(searchParams.get("view") ?? undefined);
 
   return (
     <nav
@@ -22,16 +23,14 @@ export function PoeSecondaryNav({ game }: { game: "poe1" | "poe2" }) {
     >
       <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-6 py-3">
         {sections.map((section) => {
-          const href = section.segment ? `${base}/${section.segment}` : base;
-          const active =
-            section.segment === ""
-              ? pathname === base || pathname === `${base}/`
-              : pathname === href || pathname.startsWith(`${href}/`);
+          const href = poeViewHref(game, section.view);
+          const active = activeView === section.view;
 
           return (
-            <li key={section.label}>
+            <li key={section.view}>
               <Link
                 href={href}
+                scroll={false}
                 aria-current={active ? "page" : undefined}
                 className={
                   active
