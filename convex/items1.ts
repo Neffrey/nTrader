@@ -55,6 +55,8 @@ const CATALOG_URLS = [
 const POE_NINJA_LEAGUES_URL = "https://poe.ninja/poe1/api/economy/leagues";
 const POE_NINJA_EXCHANGE_OVERVIEW_URL =
   "https://poe.ninja/poe1/api/economy/exchange/current/overview";
+const POE_NINJA_STASH_ITEM_OVERVIEW_URL =
+  "https://poe.ninja/poe1/api/economy/stash/current/item/overview";
 const DEFAULT_POE_NINJA_LEAGUE = "Allflame";
 const POE_NINJA_OVERVIEW_TYPES = [
   "Currency",
@@ -63,8 +65,18 @@ const POE_NINJA_OVERVIEW_TYPES = [
   "Omen",
   "DivinationCard",
   "Oil",
+  "DeliriumOrb",
+  "Scarab",
+  "Fossil",
+  "ScryingOrb",
+  "EnshroudingCrystal",
+  "Astrolabe",
 ] as const;
 type PoeNinjaOverviewType = (typeof POE_NINJA_OVERVIEW_TYPES)[number];
+// Scrying Orbs are stash-only on poe.ninja (no exchange overview rows).
+const POE_NINJA_STASH_ITEM_OVERVIEW_TYPES = new Set<PoeNinjaOverviewType>([
+  "ScryingOrb",
+]);
 const poeNinjaOverviewType = v.union(
   v.literal("Currency"),
   v.literal("Fragment"),
@@ -72,6 +84,12 @@ const poeNinjaOverviewType = v.union(
   v.literal("Omen"),
   v.literal("DivinationCard"),
   v.literal("Oil"),
+  v.literal("DeliriumOrb"),
+  v.literal("Scarab"),
+  v.literal("Fossil"),
+  v.literal("ScryingOrb"),
+  v.literal("EnshroudingCrystal"),
+  v.literal("Astrolabe"),
 );
 const CATEGORY_BY_OVERVIEW_TYPE: Record<PoeNinjaOverviewType, string> = {
   Currency: "Currency",
@@ -80,6 +98,12 @@ const CATEGORY_BY_OVERVIEW_TYPE: Record<PoeNinjaOverviewType, string> = {
   Omen: "Omens",
   DivinationCard: "Divination Cards",
   Oil: "Oils",
+  DeliriumOrb: "Delirium Orbs",
+  Scarab: "Scarabs",
+  Fossil: "Fossils",
+  ScryingOrb: "Scrying Orbs",
+  EnshroudingCrystal: "Enshrouding Crystals",
+  Astrolabe: "Astrolabes",
 };
 
 export const list = query({
@@ -735,15 +759,23 @@ async function importPoeNinjaOverview(
   const categoryName = CATEGORY_BY_OVERVIEW_TYPE[overviewType];
   let written = 0;
   const batchSize = 200;
-  for (let index = 0; index < items.length; index += batchSize) {
-    const batchWritten: number = await ctx.runMutation(
-      internal.items1.upsertBatch,
-      {
-        items: items.slice(index, index + batchSize),
-        categoryName,
-      },
-    );
-    written += batchWritten;
+  if (items.length === 0) {
+    // Still ensure the PoE1 category exists when poe.ninja has no rows yet.
+    await ctx.runMutation(internal.items1.upsertBatch, {
+      items: [],
+      categoryName,
+    });
+  } else {
+    for (let index = 0; index < items.length; index += batchSize) {
+      const batchWritten: number = await ctx.runMutation(
+        internal.items1.upsertBatch,
+        {
+          items: items.slice(index, index + batchSize),
+          categoryName,
+        },
+      );
+      written += batchWritten;
+    }
   }
   return {
     count: items.length,
@@ -803,6 +835,9 @@ async function loadPoeNinjaOverview(
   league: string,
   overviewType: PoeNinjaOverviewType,
 ) {
+  if (POE_NINJA_STASH_ITEM_OVERVIEW_TYPES.has(overviewType)) {
+    return await loadPoeNinjaStashItemOverview(league, overviewType);
+  }
   const url = new URL(POE_NINJA_EXCHANGE_OVERVIEW_URL);
   url.searchParams.set("league", league);
   url.searchParams.set("type", overviewType);
@@ -815,6 +850,72 @@ async function loadPoeNinjaOverview(
     );
   }
   return readPoeNinjaOverview(await response.json(), overviewType);
+}
+
+async function loadPoeNinjaStashItemOverview(
+  league: string,
+  overviewType: PoeNinjaOverviewType,
+) {
+  const url = new URL(POE_NINJA_STASH_ITEM_OVERVIEW_URL);
+  url.searchParams.set("league", league);
+  url.searchParams.set("type", overviewType);
+  const response = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new ConvexError(
+      `poe.ninja ${overviewType} stash overview failed (${response.status})`,
+    );
+  }
+  return readPoeNinjaStashItemOverview(await response.json(), overviewType);
+}
+
+function readPoeNinjaStashItemOverview(
+  data: unknown,
+  overviewType: PoeNinjaOverviewType,
+) {
+  if (typeof data !== "object" || data === null || !("lines" in data)) {
+    throw new ConvexError(
+      `poe.ninja ${overviewType} stash response was not recognized`,
+    );
+  }
+  const linesField = data.lines;
+  if (!Array.isArray(linesField)) {
+    throw new ConvexError(
+      `poe.ninja ${overviewType} stash response was not recognized`,
+    );
+  }
+
+  const byInternalId = new Map<
+    string,
+    { name: string; image: string | null; internalId: string }
+  >();
+  for (const entry of linesField) {
+    if (typeof entry !== "object" || entry === null) {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const detailsId =
+      typeof record.detailsId === "string" ? record.detailsId.trim() : "";
+    const mapName = typeof record.name === "string" ? record.name.trim() : "";
+    const baseType =
+      typeof record.baseType === "string" ? record.baseType.trim() : "";
+    if (detailsId.length === 0 || mapName.length === 0) {
+      continue;
+    }
+    // Stash rows use map/area names; keep trade-style "Scrying Orb (Map)".
+    const name =
+      baseType.length > 0 && baseType !== mapName
+        ? `${baseType} (${mapName})`
+        : mapName;
+    const internalId = detailsId;
+    const image = absoluteImageUrl(record.icon ?? record.image);
+    const current = byInternalId.get(internalId);
+    if (current === undefined || (current.image === null && image !== null)) {
+      byInternalId.set(internalId, { name, image, internalId });
+    }
+  }
+  return [...byInternalId.values()];
 }
 
 function readPoeNinjaOverview(
