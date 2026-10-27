@@ -11,7 +11,13 @@ type OverviewType =
   | "Tattoo"
   | "Omen"
   | "DivinationCard"
-  | "Oil";
+  | "Oil"
+  | "DeliriumOrb"
+  | "Scarab"
+  | "Fossil"
+  | "ScryingOrb"
+  | "EnshroudingCrystal"
+  | "Astrolabe";
 
 export function ImportPoeNinjaCatalog({
   type,

@@ -63,6 +63,12 @@ const POE_NINJA_OVERVIEW_TYPES = [
   "Omen",
   "DivinationCard",
   "Oil",
+  "DeliriumOrb",
+  "Scarab",
+  "Fossil",
+  "ScryingOrb",
+  "EnshroudingCrystal",
+  "Astrolabe",
 ] as const;
 type PoeNinjaOverviewType = (typeof POE_NINJA_OVERVIEW_TYPES)[number];
 const poeNinjaOverviewType = v.union(
@@ -72,6 +78,12 @@ const poeNinjaOverviewType = v.union(
   v.literal("Omen"),
   v.literal("DivinationCard"),
   v.literal("Oil"),
+  v.literal("DeliriumOrb"),
+  v.literal("Scarab"),
+  v.literal("Fossil"),
+  v.literal("ScryingOrb"),
+  v.literal("EnshroudingCrystal"),
+  v.literal("Astrolabe"),
 );
 const CATEGORY_BY_OVERVIEW_TYPE: Record<PoeNinjaOverviewType, string> = {
   Currency: "Currency",
@@ -80,6 +92,12 @@ const CATEGORY_BY_OVERVIEW_TYPE: Record<PoeNinjaOverviewType, string> = {
   Omen: "Omens",
   DivinationCard: "Divination Cards",
   Oil: "Oils",
+  DeliriumOrb: "Delirium Orbs",
+  Scarab: "Scarabs",
+  Fossil: "Fossils",
+  ScryingOrb: "Scrying Orbs",
+  EnshroudingCrystal: "Enshrouding Crystals",
+  Astrolabe: "Astrolabes",
 };
 
 export const list = query({
@@ -735,15 +753,23 @@ async function importPoeNinjaOverview(
   const categoryName = CATEGORY_BY_OVERVIEW_TYPE[overviewType];
   let written = 0;
   const batchSize = 200;
-  for (let index = 0; index < items.length; index += batchSize) {
-    const batchWritten: number = await ctx.runMutation(
-      internal.items1.upsertBatch,
-      {
-        items: items.slice(index, index + batchSize),
-        categoryName,
-      },
-    );
-    written += batchWritten;
+  if (items.length === 0) {
+    // Still ensure the PoE1 category exists when poe.ninja has no rows yet.
+    await ctx.runMutation(internal.items1.upsertBatch, {
+      items: [],
+      categoryName,
+    });
+  } else {
+    for (let index = 0; index < items.length; index += batchSize) {
+      const batchWritten: number = await ctx.runMutation(
+        internal.items1.upsertBatch,
+        {
+          items: items.slice(index, index + batchSize),
+          categoryName,
+        },
+      );
+      written += batchWritten;
+    }
   }
   return {
     count: items.length,

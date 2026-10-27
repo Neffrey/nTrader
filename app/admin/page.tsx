@@ -78,6 +78,45 @@ export default async function AdminPage() {
           <ImportPoeNinjaCatalog type="Oil" label="Oils" />
         </section>
         <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja delirium orbs
+          </h2>
+          <ImportPoeNinjaCatalog type="DeliriumOrb" label="Delirium Orbs" />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja scarabs
+          </h2>
+          <ImportPoeNinjaCatalog type="Scarab" label="Scarabs" />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja fossils
+          </h2>
+          <ImportPoeNinjaCatalog type="Fossil" label="Fossils" />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja scrying orbs
+          </h2>
+          <ImportPoeNinjaCatalog type="ScryingOrb" label="Scrying Orbs" />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja enshrouding crystals
+          </h2>
+          <ImportPoeNinjaCatalog
+            type="EnshroudingCrystal"
+            label="Enshrouding Crystals"
+          />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja astrolabes
+          </h2>
+          <ImportPoeNinjaCatalog type="Astrolabe" label="Astrolabes" />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
           <h2 className="text-lg font-medium text-neutral-100">Categories</h2>
           <CategoryAdmin />
         </section>
