@@ -9,6 +9,7 @@ import { isLocalHostRequest } from "@/lib/local-request";
 import { AddItemForm } from "./add-item-form";
 import { AddLeagueForm } from "./add-league-form";
 import { CategoryAdmin } from "./category-admin";
+import { ImportPoeNinjaCatalog } from "./import-poe-ninja-catalog";
 import { ImportPoeNinjaCurrency } from "./import-poe-ninja-currency";
 import { ImportPoeNinjaFragments } from "./import-poe-ninja-fragments";
 import { ImportPoeNinjaTattoos } from "./import-poe-ninja-tattoos";
@@ -54,6 +55,27 @@ export default async function AdminPage() {
             Import poe.ninja tattoos
           </h2>
           <ImportPoeNinjaTattoos />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja omens
+          </h2>
+          <ImportPoeNinjaCatalog type="Omen" label="Omens" />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja divination cards
+          </h2>
+          <ImportPoeNinjaCatalog
+            type="DivinationCard"
+            label="Divination Cards"
+          />
+        </section>
+        <section className="flex w-full flex-col items-center gap-4">
+          <h2 className="text-lg font-medium text-neutral-100">
+            Import poe.ninja oils
+          </h2>
+          <ImportPoeNinjaCatalog type="Oil" label="Oils" />
         </section>
         <section className="flex w-full flex-col items-center gap-4">
           <h2 className="text-lg font-medium text-neutral-100">Categories</h2>
