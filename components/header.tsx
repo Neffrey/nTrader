@@ -52,7 +52,9 @@ export function Header({ localHost }: { localHost: boolean }) {
                   localHost || !link.admin || currentUser?.role === "admin",
               )
               .map((link) => {
-              const active = pathname === link.href;
+              const active =
+                pathname === link.href ||
+                pathname.startsWith(`${link.href}/`);
               return (
                 <li key={link.href}>
                   <Link

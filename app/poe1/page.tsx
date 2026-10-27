@@ -1,15 +1,24 @@
-import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SelectedLeagueProvider } from "@/components/game-league-select";
-import { isLocalHostRequest } from "@/lib/local-request";
+import { PoePlaceholderPage } from "@/components/poe-placeholder";
+import { parsePoeView } from "@/lib/poe-view";
 import { AddItem } from "./add-item";
 import { AddPricing } from "./add-pricing";
 
-export default async function Poe1Page() {
-  const token = await convexAuthNextjsToken();
-  if (!token && !(await isLocalHostRequest())) {
-    redirect("/");
+export default async function Poe1Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const view = parsePoeView(params.view);
+
+  if (view !== "prices") {
+    return (
+      <SelectedLeagueProvider game="poe1">
+        <PoePlaceholderPage game="poe1" section={view} />
+      </SelectedLeagueProvider>
+    );
   }
 
   return (
