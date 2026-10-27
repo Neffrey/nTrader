@@ -20,7 +20,7 @@ export function PoeSecondaryNav({ game }: { game: "poe1" | "poe2" }) {
       aria-label={`${game === "poe1" ? "PoE 1" : "PoE 2"} sections`}
       className="border-b border-neutral-800 bg-neutral-950"
     >
-      <ul className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2 px-6 py-3">
+      <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-6 py-3">
         {sections.map((section) => {
           const href = section.segment ? `${base}/${section.segment}` : base;
           const active =
