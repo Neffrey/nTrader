@@ -11,7 +11,7 @@ import {
 import type { ActionCtx, MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
-import { currencyCategoryId } from "./itemCategory";
+import { ensureCategoryId } from "./itemCategory";
 import { requireAdmin } from "./users";
 
 async function assertUniqueInternalId(
@@ -52,9 +52,15 @@ const CATALOG_URLS = [
   "https://www.pathofexile.com/api/trade/data/items",
 ];
 const POE_NINJA_LEAGUES_URL = "https://poe.ninja/poe1/api/economy/leagues";
-const POE_NINJA_CURRENCY_OVERVIEW_URL =
+const POE_NINJA_EXCHANGE_OVERVIEW_URL =
   "https://poe.ninja/poe1/api/economy/exchange/current/overview";
 const DEFAULT_POE_NINJA_LEAGUE = "Allflame";
+const POE_NINJA_OVERVIEW_TYPES = ["Currency", "Fragment"] as const;
+type PoeNinjaOverviewType = (typeof POE_NINJA_OVERVIEW_TYPES)[number];
+const CATEGORY_BY_OVERVIEW_TYPE: Record<PoeNinjaOverviewType, string> = {
+  Currency: "Currency",
+  Fragment: "Fragments",
+};
 
 export const list = query({
   args: {},
@@ -296,9 +302,14 @@ export const cleanupRemovedItem = internalMutation({
 });
 
 export const upsertBatch = internalMutation({
-  args: { items: v.array(catalogItem) },
+  args: {
+    items: v.array(catalogItem),
+    categoryName: v.optional(v.string()),
+  },
   returns: v.number(),
   handler: async (ctx, args) => {
+    const categoryName = args.categoryName?.trim() || "Currency";
+    const categoryId = await ensureCategoryId(ctx, "poe1", categoryName);
     let written = 0;
     for (const item of args.items) {
       const byName = await ctx.db
@@ -313,7 +324,6 @@ export const upsertBatch = internalMutation({
       const current = byName[0] ?? byInternalId[0];
       if (current === undefined) {
         await assertUniqueInternalId(ctx, item.internalId);
-        const categoryId = await currencyCategoryId(ctx, "poe1");
         await ctx.db.insert("items1", {
           name: item.name,
           internalId: item.internalId,
@@ -327,6 +337,7 @@ export const upsertBatch = internalMutation({
         name?: string;
         image?: string;
         internalId?: string;
+        categoryId?: typeof categoryId;
       } = {};
       if (current.name !== item.name) {
         patch.name = item.name;
@@ -338,10 +349,14 @@ export const upsertBatch = internalMutation({
         await assertUniqueInternalId(ctx, item.internalId, current._id);
         patch.internalId = item.internalId;
       }
+      if (current.categoryId !== categoryId) {
+        patch.categoryId = categoryId;
+      }
       if (
         patch.name !== undefined ||
         patch.image !== undefined ||
-        patch.internalId !== undefined
+        patch.internalId !== undefined ||
+        patch.categoryId !== undefined
       ) {
         await ctx.db.patch("items1", current._id, patch);
         written += 1;
@@ -385,7 +400,7 @@ export const fetchPoeNinjaCurrency = action({
   handler: async (ctx, args) => {
     const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
     void adminCheck;
-    return await importPoeNinjaCurrency(ctx, args.league);
+    return await importPoeNinjaOverview(ctx, "Currency", args.league);
   },
 });
 
@@ -399,22 +414,57 @@ export const seedPoeNinjaCurrency = internalAction({
     league: v.string(),
   }),
   handler: async (ctx, args) => {
-    return await importPoeNinjaCurrency(ctx, args.league);
+    return await importPoeNinjaOverview(ctx, "Currency", args.league);
   },
 });
 
-async function importPoeNinjaCurrency(
+export const fetchPoeNinjaFragments = action({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: v.object({
+    count: v.number(),
+    written: v.number(),
+    league: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    const adminCheck: null = await ctx.runQuery(internal.items1.assertAdmin, {});
+    void adminCheck;
+    return await importPoeNinjaOverview(ctx, "Fragment", args.league);
+  },
+});
+
+export const seedPoeNinjaFragments = internalAction({
+  args: {
+    league: v.optional(v.string()),
+  },
+  returns: v.object({
+    count: v.number(),
+    written: v.number(),
+    league: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    return await importPoeNinjaOverview(ctx, "Fragment", args.league);
+  },
+});
+
+async function importPoeNinjaOverview(
   ctx: ActionCtx,
+  overviewType: PoeNinjaOverviewType,
   requestedLeague?: string,
 ) {
   const league = await resolvePoeNinjaLeague(requestedLeague);
-  const items = await loadPoeNinjaCurrency(league);
+  const items = await loadPoeNinjaOverview(league, overviewType);
+  const categoryName = CATEGORY_BY_OVERVIEW_TYPE[overviewType];
   let written = 0;
   const batchSize = 200;
   for (let index = 0; index < items.length; index += batchSize) {
     const batchWritten: number = await ctx.runMutation(
       internal.items1.upsertBatch,
-      { items: items.slice(index, index + batchSize) },
+      {
+        items: items.slice(index, index + batchSize),
+        categoryName,
+      },
     );
     written += batchWritten;
   }
@@ -467,28 +517,38 @@ async function resolvePoeNinjaLeague(requested?: string) {
   return first;
 }
 
-async function loadPoeNinjaCurrency(league: string) {
-  const url = new URL(POE_NINJA_CURRENCY_OVERVIEW_URL);
+async function loadPoeNinjaOverview(
+  league: string,
+  overviewType: PoeNinjaOverviewType,
+) {
+  const url = new URL(POE_NINJA_EXCHANGE_OVERVIEW_URL);
   url.searchParams.set("league", league);
-  url.searchParams.set("type", "Currency");
+  url.searchParams.set("type", overviewType);
   const response = await fetch(url, {
     headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
   });
   if (!response.ok) {
     throw new ConvexError(
-      `poe.ninja currency overview failed (${response.status})`,
+      `poe.ninja ${overviewType} overview failed (${response.status})`,
     );
   }
-  return readPoeNinjaCurrency(await response.json());
+  return readPoeNinjaOverview(await response.json(), overviewType);
 }
 
-function readPoeNinjaCurrency(data: unknown) {
+function readPoeNinjaOverview(
+  data: unknown,
+  overviewType: PoeNinjaOverviewType,
+) {
   if (typeof data !== "object" || data === null || !("items" in data)) {
-    throw new ConvexError("poe.ninja currency response was not recognized");
+    throw new ConvexError(
+      `poe.ninja ${overviewType} response was not recognized`,
+    );
   }
   const itemsField = data.items;
   if (!Array.isArray(itemsField)) {
-    throw new ConvexError("poe.ninja currency response was not recognized");
+    throw new ConvexError(
+      `poe.ninja ${overviewType} response was not recognized`,
+    );
   }
 
   const byInternalId = new Map<
