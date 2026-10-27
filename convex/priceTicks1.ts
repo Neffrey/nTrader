@@ -1,10 +1,96 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+} from "./_generated/server";
 import { findOrCreateItemPair1 } from "./itemPairs";
 import { simplifyAmounts } from "./priceAmounts";
 
 const PAIRS_PER_FAVORITE = 50;
+
+const historicTick = v.object({
+  itemAId: v.id("items1"),
+  itemBId: v.id("items1"),
+  amountA: v.number(),
+  amountB: v.number(),
+  postTime: v.number(),
+});
+
+/**
+ * Bulk-insert historic PoE1 price ticks (e.g. past-league CSV import).
+ * Skips rows where the pair+league+postTime tick already exists.
+ */
+export const importHistoricBatch = internalMutation({
+  args: {
+    userId: v.id("users"),
+    gameLeagueId: v.id("gameLeague"),
+    ticks: v.array(historicTick),
+  },
+  returns: v.object({
+    written: v.number(),
+    skippedExisting: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get("users", args.userId);
+    if (user === null || user.role === "banned") {
+      throw new ConvexError("Import user not authorized");
+    }
+    const league = await ctx.db.get("gameLeague", args.gameLeagueId);
+    if (league === null || league.game !== "poe1") {
+      throw new ConvexError("League not found");
+    }
+
+    let written = 0;
+    let skippedExisting = 0;
+    for (const tick of args.ticks) {
+      if (tick.itemAId === tick.itemBId) {
+        continue;
+      }
+      if (!Number.isFinite(tick.amountA) || tick.amountA <= 0) {
+        continue;
+      }
+      if (!Number.isFinite(tick.amountB) || tick.amountB <= 0) {
+        continue;
+      }
+      const itemA = await ctx.db.get("items1", tick.itemAId);
+      const itemB = await ctx.db.get("items1", tick.itemBId);
+      if (itemA === null || itemB === null) {
+        continue;
+      }
+      const itemPairId = await findOrCreateItemPair1(
+        ctx,
+        tick.itemAId,
+        tick.itemBId,
+      );
+      const existing = await ctx.db
+        .query("priceTick1")
+        .withIndex("by_itemPairId_and_gameLeagueId_and_postTime", (q) =>
+          q
+            .eq("itemPairId", itemPairId)
+            .eq("gameLeagueId", args.gameLeagueId)
+            .eq("postTime", tick.postTime),
+        )
+        .take(1);
+      if (existing.length > 0) {
+        skippedExisting += 1;
+        continue;
+      }
+      const amounts = simplifyAmounts(tick.amountA, tick.amountB);
+      await ctx.db.insert("priceTick1", {
+        userId: args.userId,
+        itemPairId,
+        gameLeagueId: args.gameLeagueId,
+        amountA: amounts.amountA,
+        amountB: amounts.amountB,
+        postTime: tick.postTime,
+      });
+      written += 1;
+    }
+    return { written, skippedExisting };
+  },
+});
 
 export const add = mutation({
   args: {
