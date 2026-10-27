@@ -136,6 +136,28 @@ export const list = query({
   },
 });
 
+export const get = query({
+  args: { id: v.id("items1") },
+  returns: v.union(item, v.null()),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      return null;
+    }
+    const row = await ctx.db.get("items1", args.id);
+    if (row === null) {
+      return null;
+    }
+    return {
+      _id: row._id,
+      name: row.name,
+      image: row.image ?? null,
+      internalId: row.internalId,
+      categoryId: row.categoryId,
+    };
+  },
+});
+
 export const add = mutation({
   args: {
     name: v.string(),
