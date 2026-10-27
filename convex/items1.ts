@@ -33,6 +33,7 @@ const item = v.object({
   name: v.string(),
   image: v.union(v.string(), v.null()),
   internalId: v.string(),
+  categoryId: v.id("itemCategory"),
 });
 
 const catalogItem = v.object({
@@ -105,6 +106,7 @@ export const list = query({
         name: row.name,
         image: row.image ?? null,
         internalId: row.internalId,
+        categoryId: row.categoryId,
       })),
     };
   },

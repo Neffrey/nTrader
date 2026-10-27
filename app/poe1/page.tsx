@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { SelectedLeagueProvider } from "@/components/game-league-select";
 import { PoePlaceholderPage } from "@/components/poe-placeholder";
 import { parsePoeView } from "@/lib/poe-view";
@@ -8,7 +9,7 @@ import { AddPricing } from "./add-pricing";
 export default async function Poe1Page({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string | string[] }>;
+  searchParams: Promise<{ view?: string | string[]; category?: string | string[] }>;
 }) {
   const params = await searchParams;
   const view = parsePoeView(params.view);
@@ -27,7 +28,9 @@ export default async function Poe1Page({
         <div className="flex w-full max-w-6xl flex-col items-center gap-8 text-center">
           <h1 className="text-4xl font-semibold tracking-tight">PoE 1</h1>
           <AddPricing />
-          <AddItem />
+          <Suspense fallback={<div className="w-full py-8 text-sm text-neutral-400">Loading items…</div>}>
+            <AddItem />
+          </Suspense>
           <Link
             href="/"
             className="text-sm text-neutral-400 underline underline-offset-4 hover:text-neutral-200"

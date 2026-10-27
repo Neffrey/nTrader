@@ -3,6 +3,8 @@
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import Image from "next/image";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Fragment, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -12,10 +14,12 @@ import {
 } from "@/components/game-league-select";
 import { ItemMenu } from "@/components/item-menu";
 import { ItemPairPrices } from "@/components/item-pair-prices";
+import { parsePoeCategory, poeCategoryHref } from "@/lib/poe-view";
 
 export function AddItem() {
   const catalog = useQuery(api.items1.list);
   const items = catalog?.items;
+  const categories = useQuery(api.itemCategory.list);
   const currentUser = useQuery(api.users.current);
   const updateItem = useMutation(api.items1.update);
   const removeItem = useMutation(api.items1.remove);
@@ -25,6 +29,7 @@ export function AddItem() {
     api.priceTicks1.latestWithFavorites,
     leagueId === "" ? "skip" : { gameLeagueId: leagueId },
   );
+  const searchParams = useSearchParams();
   const [editingId, setEditingId] = useState<Id<"items1"> | null>(null);
   const [editingSource, setEditingSource] = useState<"favorites" | "list" | null>(
     null,
@@ -41,6 +46,20 @@ export function AddItem() {
     return null;
   }
 
+  const poe1Categories = [...(categories ?? [])]
+    .filter((category) => category.game === "poe1")
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+    );
+  const categoryNames = poe1Categories.map((category) => category.name);
+  const selectedCategoryName = parsePoeCategory(
+    searchParams.get("category"),
+    categoryNames,
+  );
+  const selectedCategory = poe1Categories.find(
+    (category) => category.name === selectedCategoryName,
+  );
+
   const role = currentUser?.role;
   const showEdit = role === "admin";
   const showDelete = role === "admin";
@@ -55,6 +74,12 @@ export function AddItem() {
   const favoriteIds = new Set(currentUser?.poe1Favorites ?? []);
   const visibleItems = sortedItems.filter((item) => {
     if (favoriteIds.has(item._id)) {
+      return false;
+    }
+    if (
+      selectedCategory !== undefined &&
+      item.categoryId !== selectedCategory._id
+    ) {
       return false;
     }
     if (!trimmedQuery) {
@@ -285,54 +310,86 @@ export function AddItem() {
           This list is the first 2,000 items. More items exist in the catalog.
         </p>
       ) : null}
-      <div className="rounded-md border border-neutral-800">
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b border-neutral-800 text-xs tracking-wide text-neutral-400">
-              <th
-                className="w-14 px-3 py-2 font-medium"
-                scope="col"
-              >
-                <span className="sr-only">Image</span>
-              </th>
-              <th
-                className="px-3 py-2 font-medium"
-                scope="col"
-                aria-sort={nameSort === "asc" ? "ascending" : "descending"}
-              >
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 hover:text-neutral-100"
-                  onClick={() => {
-                    setNameSort((current) => (current === "asc" ? "desc" : "asc"));
-                  }}
+      <div className="flex w-full flex-col gap-4 md:flex-row md:items-start">
+        {poe1Categories.length > 0 ? (
+          <nav
+            aria-label="PoE 1 item categories"
+            className="w-full shrink-0 md:w-48"
+          >
+            <ul className="flex flex-row gap-1 overflow-x-auto md:flex-col md:overflow-visible">
+              {poe1Categories.map((category) => {
+                const active = category.name === selectedCategoryName;
+                return (
+                  <li key={category._id} className="shrink-0">
+                    <Link
+                      href={poeCategoryHref("poe1", category.name)}
+                      scroll={false}
+                      aria-current={active ? "page" : undefined}
+                      className={
+                        active
+                          ? "block rounded-md bg-neutral-900 px-3 py-2 text-sm text-neutral-100"
+                          : "block rounded-md px-3 py-2 text-sm text-neutral-400 hover:bg-neutral-900/60 hover:text-neutral-200"
+                      }
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : null}
+        <div className="min-w-0 flex-1 rounded-md border border-neutral-800">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-neutral-800 text-xs tracking-wide text-neutral-400">
+                <th className="w-14 px-3 py-2 font-medium" scope="col">
+                  <span className="sr-only">Image</span>
+                </th>
+                <th
+                  className="px-3 py-2 font-medium"
+                  scope="col"
+                  aria-sort={nameSort === "asc" ? "ascending" : "descending"}
                 >
-                  Name
-                  <span aria-hidden="true">{nameSort === "asc" ? "↑" : "↓"}</span>
-                </button>
-              </th>
-              <th
-                className="w-12 px-3 py-2 font-medium"
-                scope="col"
-              >
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {trimmedQuery && visibleItems.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={3}
-                  className="px-3 py-4 text-sm text-neutral-400"
-                >
-                  No items match that name
-                </td>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 hover:text-neutral-100"
+                    onClick={() => {
+                      setNameSort((current) =>
+                        current === "asc" ? "desc" : "asc",
+                      );
+                    }}
+                  >
+                    Name
+                    <span aria-hidden="true">
+                      {nameSort === "asc" ? "↑" : "↓"}
+                    </span>
+                  </button>
+                </th>
+                <th className="w-12 px-3 py-2 font-medium" scope="col">
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
-            ) : null}
-            {itemRows(visibleItems, "list")}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {visibleItems.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-3 py-4 text-sm text-neutral-400"
+                  >
+                    {trimmedQuery
+                      ? "No items match that name"
+                      : selectedCategoryName
+                        ? `No items in ${selectedCategoryName}`
+                        : "No items"}
+                  </td>
+                </tr>
+              ) : null}
+              {itemRows(visibleItems, "list")}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -37,3 +37,27 @@ export function poeViewHref(game: "poe1" | "poe2", view: PoeView) {
   }
   return `/${game}?view=${view}`;
 }
+
+export function parsePoeCategory(
+  value: string | string[] | null | undefined,
+  available: readonly string[],
+) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw === "string" && available.includes(raw)) {
+    return raw;
+  }
+  if (available.includes("Currency")) {
+    return "Currency";
+  }
+  return available[0] ?? null;
+}
+
+export function poeCategoryHref(
+  game: "poe1" | "poe2",
+  category: string | null,
+) {
+  if (category === null || category === "Currency") {
+    return `/${game}`;
+  }
+  return `/${game}?category=${encodeURIComponent(category)}`;
+}
