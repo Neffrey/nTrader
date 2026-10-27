@@ -98,19 +98,26 @@ export function AddItem() {
         <tr className="border-b border-neutral-800 last:border-b-0">
           <td className="px-3 py-2">
             {item.image ? (
-              <Image
-                src={item.image}
-                alt=""
-                width={40}
-                height={40}
-                unoptimized
-                className="h-10 w-10 rounded-md object-cover"
-              />
+              <Link href={`/poe1/item/${item._id}`} aria-label={item.name}>
+                <Image
+                  src={item.image}
+                  alt=""
+                  width={40}
+                  height={40}
+                  unoptimized
+                  className="h-10 w-10 rounded-md object-cover"
+                />
+              </Link>
             ) : null}
           </td>
           <td className="px-3 py-2 text-sm text-neutral-100">
             <div className="flex flex-wrap items-center gap-2">
-              <span>{item.name}</span>
+              <Link
+                href={`/poe1/item/${item._id}`}
+                className="hover:underline hover:underline-offset-2"
+              >
+                {item.name}
+              </Link>
               <ItemPairPrices
                 itemId={item._id}
                 favoriteIds={favoriteIds}

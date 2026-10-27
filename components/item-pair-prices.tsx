@@ -46,6 +46,13 @@ export function ItemPairPrices<T extends string>({
   quotes: PairQuote<T>[];
   itemsById: ReadonlyMap<T, PairItem>;
 }) {
+  const selectedName = itemsById.get(itemId)?.name;
+  // Chaos Orb prices are crowded after historic import; only keep Divine Orb.
+  const chaosOnlyDivine =
+    selectedName === "Chaos Orb"
+      ? (otherName: string) => otherName === "Divine Orb"
+      : null;
+
   const labels = quotes
     .flatMap((quote) => {
       const otherId =
@@ -63,6 +70,9 @@ export function ItemPairPrices<T extends string>({
       const itemB = itemsById.get(quote.itemBId);
       const other = itemsById.get(otherId);
       if (itemA === undefined || itemB === undefined || other === undefined) {
+        return [];
+      }
+      if (chaosOnlyDivine !== null && !chaosOnlyDivine(other.name)) {
         return [];
       }
       return [{ quote, otherName: other.name, itemA, itemB }];

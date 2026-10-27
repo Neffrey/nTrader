@@ -5,6 +5,7 @@ import {
   mutation,
   query,
 } from "./_generated/server";
+import type { QueryCtx } from "./_generated/server";
 import { findOrCreateItemPair1 } from "./itemPairs";
 import { simplifyAmounts } from "./priceAmounts";
 
@@ -211,5 +212,149 @@ export const latestWithFavorites = query({
       }
     }
     return quotes;
+  },
+});
+
+const HISTORY_LIMIT = 500;
+
+async function findItemByName(ctx: QueryCtx, name: string) {
+  const rows = await ctx.db
+    .query("items1")
+    .withIndex("by_name", (q) => q.eq("name", name))
+    .take(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Historic ticks for one item vs a quote currency (Chaos Orb, or Divine when
+ * the subject is Chaos). Value is quote-per-1-subject.
+ */
+export const historyForItem = query({
+  args: {
+    itemId: v.id("items1"),
+    gameLeagueId: v.id("gameLeague"),
+    quoteItemId: v.optional(v.id("items1")),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      item: v.object({
+        _id: v.id("items1"),
+        name: v.string(),
+        image: v.union(v.string(), v.null()),
+      }),
+      quote: v.object({
+        _id: v.id("items1"),
+        name: v.string(),
+        image: v.union(v.string(), v.null()),
+      }),
+      points: v.array(
+        v.object({
+          postTime: v.number(),
+          value: v.number(),
+          amountSubject: v.number(),
+          amountQuote: v.number(),
+        }),
+      ),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      return null;
+    }
+    const league = await ctx.db.get("gameLeague", args.gameLeagueId);
+    if (league === null || league.game !== "poe1") {
+      return null;
+    }
+    const item = await ctx.db.get("items1", args.itemId);
+    if (item === null) {
+      return null;
+    }
+
+    let quote =
+      args.quoteItemId !== undefined
+        ? await ctx.db.get("items1", args.quoteItemId)
+        : null;
+    if (quote === null) {
+      const preferredName =
+        item.name === "Chaos Orb" ? "Divine Orb" : "Chaos Orb";
+      quote = await findItemByName(ctx, preferredName);
+    }
+    if (quote === null || quote._id === item._id) {
+      return null;
+    }
+
+    const quoteItem = quote;
+    const pairAsA = await ctx.db
+      .query("itemPairs1")
+      .withIndex("by_itemAId_and_itemBId", (q) =>
+        q.eq("itemAId", item._id).eq("itemBId", quoteItem._id),
+      )
+      .unique();
+    const pairAsB =
+      pairAsA === null
+        ? await ctx.db
+            .query("itemPairs1")
+            .withIndex("by_itemAId_and_itemBId", (q) =>
+              q.eq("itemAId", quoteItem._id).eq("itemBId", item._id),
+            )
+            .unique()
+        : null;
+    const pair = pairAsA ?? pairAsB;
+    if (pair === null) {
+      return {
+        item: {
+          _id: item._id,
+          name: item.name,
+          image: item.image ?? null,
+        },
+        quote: {
+          _id: quoteItem._id,
+          name: quoteItem.name,
+          image: quoteItem.image ?? null,
+        },
+        points: [],
+      };
+    }
+
+    const ticks = await ctx.db
+      .query("priceTick1")
+      .withIndex("by_itemPairId_and_gameLeagueId_and_postTime", (q) =>
+        q.eq("itemPairId", pair._id).eq("gameLeagueId", args.gameLeagueId),
+      )
+      .order("asc")
+      .take(HISTORY_LIMIT);
+
+    const subjectIsA = pair.itemAId === item._id;
+    const points = ticks.flatMap((tick) => {
+      const amountSubject = subjectIsA ? tick.amountA : tick.amountB;
+      const amountQuote = subjectIsA ? tick.amountB : tick.amountA;
+      if (amountSubject <= 0 || amountQuote <= 0) {
+        return [];
+      }
+      return [
+        {
+          postTime: tick.postTime,
+          value: amountQuote / amountSubject,
+          amountSubject,
+          amountQuote,
+        },
+      ];
+    });
+
+    return {
+      item: {
+        _id: item._id,
+        name: item.name,
+        image: item.image ?? null,
+      },
+      quote: {
+        _id: quoteItem._id,
+        name: quoteItem.name,
+        image: quoteItem.image ?? null,
+      },
+      points,
+    };
   },
 });
