@@ -1,6 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { requireAdmin } from "./users";
@@ -121,6 +121,42 @@ export const add = mutation({
       throw new ConvexError("Internal id cannot be empty");
     }
     await assertUniqueInternalId(ctx, internalId);
+    return await ctx.db.insert("gameLeague", {
+      name,
+      internalId,
+      game: args.game,
+    });
+  },
+});
+
+/** Idempotent league upsert for destin→prod sync scripts. */
+export const ensure = internalMutation({
+  args: {
+    name: v.string(),
+    internalId: v.string(),
+    game: gameValidator,
+  },
+  returns: v.id("gameLeague"),
+  handler: async (ctx, args) => {
+    const name = args.name.trim();
+    const internalId = args.internalId.trim();
+    if (name.length === 0 || internalId.length === 0) {
+      throw new ConvexError("Name and internal id are required");
+    }
+    const byInternal = await ctx.db
+      .query("gameLeague")
+      .withIndex("by_internalId", (q) => q.eq("internalId", internalId))
+      .take(1);
+    const existing = byInternal[0];
+    if (existing !== undefined) {
+      if (existing.name !== name || existing.game !== args.game) {
+        await ctx.db.patch("gameLeague", existing._id, {
+          name,
+          game: args.game,
+        });
+      }
+      return existing._id;
+    }
     return await ctx.db.insert("gameLeague", {
       name,
       internalId,
